@@ -1,4 +1,4 @@
-import React, {useContext} from 'react';
+import React, { useContext } from 'react';
 import AnchorLink from 'react-anchor-link-smooth-scroll';
 import { ThemeContext } from 'providers/ThemeProvider';
 import ToggleTheme from 'components/theme/Header/ToggleTheme';
@@ -15,8 +15,7 @@ const NavbarLinks = ({ desktop }) => {
       <AnchorLink href="#blobs">Blobs</AnchorLink>
       <ToggleTheme />
     </Wrapper>
-  )
-
+  );
 };
 
 export default NavbarLinks;
