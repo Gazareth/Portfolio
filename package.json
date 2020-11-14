@@ -5,6 +5,7 @@
   "version": "0.1.2",
   "author": "Smakosh <ismai23l@hotmail.com>",
   "dependencies": {
+    "@inlet/react-pixi": "^6.0.6",
     "axios": "^0.19.2",
     "dotenv": "^6.2.0",
     "formik": "^2.1.4",
