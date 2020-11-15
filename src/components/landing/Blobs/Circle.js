@@ -9,10 +9,10 @@ export default CustomPIXIComponent(
     customApplyProps(instance, oldProps, newProps) {
       const { fill, x, y, radius } = newProps;
       instance.clear();
+      instance.lineStyle(0);
       instance.beginFill(fill);
       instance.drawCircle(x, y, radius);
       instance.endFill();
-      instance.filters = [new PIXI.filters.BlurFilter(0.15, 1, 4, 15)];
     },
   },
   TYPE

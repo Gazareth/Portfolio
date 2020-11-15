@@ -2,30 +2,42 @@ import React, { useContext, useState, useMemo } from 'react';
 
 import { Stage, Container } from 'react-pixi-fiber';
 import Circle from './Circle';
+import Rectangle from './Rectangle';
 import plotter from './plotter';
 import { Wrapper, SkillsWrapper } from './styles';
 
-const STAGE_OPTIONS = {
-  backgroundColor: 0x111111,
-  width: window.innerWidth * 0.4,
-  height: 500,
-  // antialias: true,
-  resolution: 2,
+const STAGE_DIMENSIONS = {
+  width: window.innerWidth * 0.8,
+  height: 1000,
 };
 
-const blobs = plotter(
-  30,
-  STAGE_OPTIONS.width * 0.5,
-  STAGE_OPTIONS.height * 0.15,
-  STAGE_OPTIONS.width,
-  STAGE_OPTIONS.height * 0.75
-);
+const STAGE_CENTER = {
+  x: STAGE_DIMENSIONS.width * 0.5,
+  y: STAGE_DIMENSIONS.height * 0.5,
+};
 
-const BLOB_PROPS = {
-  x: 100,
-  y: 100,
-  radius: 10,
-  fill: 0xffffff,
+const STAGE_OPTIONS = {
+  backgroundColor: 0x111111,
+  width: STAGE_DIMENSIONS.width,
+  height: STAGE_DIMENSIONS.height,
+  antialias: true,
+  // resolution: 2,
+};
+
+// const blobs = plotter(
+//   30,
+//   STAGE_OPTIONS.width * 0.5,
+//   STAGE_OPTIONS.height * 0.15,
+//   STAGE_OPTIONS.width * 0.5,
+//   STAGE_OPTIONS.height * 0.75
+// );
+
+const blobs = plotter(30, 30, STAGE_OPTIONS.width * 1.65, STAGE_OPTIONS.height * 1.65, 45, STAGE_CENTER);
+// const blobs = plotter(12, 2, STAGE_OPTIONS.width * 0.85, STAGE_OPTIONS.height * 0.65, 0, STAGE_CENTER);
+
+const BG_PROPS = {
+  ...STAGE_DIMENSIONS,
+  fill: 0x000000,
 };
 
 export const Blobs = () => (
@@ -33,10 +45,13 @@ export const Blobs = () => (
     <SkillsWrapper>
       <Stage options={STAGE_OPTIONS}>
         <Container>
-          {blobs.map((blob, i) => (
-            <Circle key={i} x={blob.x} y={blob.y} radius={blob.radius} fill={blob.fill} />
-          ))}
-          <Circle {...BLOB_PROPS} />
+          {/* <Rectangle {...BG_PROPS} /> */}
+          {blobs.map(
+            (blob, i) =>
+              console.log('Rendering circle with: ', blob) || (
+                <Circle key={i} x={blob.x} y={blob.y} radius={blob.radius} fill={blob.fill} />
+              )
+          )}
         </Container>
       </Stage>
     </SkillsWrapper>
