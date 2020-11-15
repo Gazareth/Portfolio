@@ -1,13 +1,8 @@
 import * as PIXI from 'pixi.js';
 
-const colours_old = ['#ff0000', '#00ff00', '#ff00ff', '#aa0000', '#00ffff'].map(
-  col => console.log('Translating colour to hex: ', col, PIXI.utils.string2hex(col)) || PIXI.utils.string2hex(col)
-);
-
-const CHETWOOD_MAIN = '#00d364';
+const CHETWOOD_MAIN = PIXI.utils.string2hex('#00d364');
 
 const colours = [
-  CHETWOOD_MAIN,
   '#2b2d39',
   '#302b37',
   '#302b37',
@@ -27,23 +22,29 @@ const colours = [
   '#4e5758',
   '#392b40',
   '#008247',
+  '#ff90c3',
+  '#846b2c',
+  '#5d5130',
+  '#ff5e71',
+  '#392b40',
+  '#4c363e',
+  '#35414c',
+  '#0d2332',
+  '#141e30',
+  '#004c44',
 ].map(col => PIXI.utils.string2hex(col));
 
-const DEFAULT_RADII = 20;
+export const DEFAULT_RADII = 18;
 
 const getRandomColour = () => colours[Math.floor(Math.random() * colours.length)];
-const getSequentialColor = index => {
-  const maxColId = colours.length - 1;
-  const id = index > maxColId ? index % maxColId : index;
-  return colours[id];
-};
 
 class CWCircle {
-  constructor(x, y, radius, fill) {
+  constructor(x, y, radius, fill, opacity = 1) {
     this.x = x;
     this.y = y;
     this.radius = radius;
     this.fill = fill;
+    this.opacity = opacity;
 
     this.delay = 0;
     this.enterTime = 0;
@@ -53,46 +54,16 @@ class CWCircle {
 }
 
 // // Box muller transform to get a normal distribution (https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve)
-// function randnBm() {
-//   let u = 0;
-//   let v = 0;
-//   while (u === 0) u = Math.random(); // Converting [0,1) to (0,1)
-//   while (v === 0) v = Math.random();
-//   let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-//   num = num / 10.0 + 0.5; // Translate to 0 -> 1
-//   if (num > 1 || num < 0) return randnBm(); // resample between 0 and 1
-//   return num;
-// }
-
-// const getRandomDistr = (min, max, skew) => {
-//   let u = 0;
-//   let v = 0;
-//   while (u === 0) u = Math.random(); // Converting [0,1) to (0,1)
-//   while (v === 0) v = Math.random();
-//   let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-
-//   num = num / 10.0 + 0.5; // Translate to 0 -> 1
-//   if (num > 1 || num < 0) num = randnBm(min, max, skew); // resample between 0 and 1 if out of range
-//   num **= skew; // Skew
-//   num *= max - min; // Stretch to fill range
-//   num += min; // offset to min
-//   return num;
-// };
-
-// // Plots blobs of random sizes and colours along a line
-// const plotNormal = (n, startX, startY, width, length) => {
-//   const plotPos = { x: startX, y: startY };
-//   const dy = length / n;
-
-//   const points = Array(n)
-//     .fill(1)
-//     .map((_, i) => ({ x: plotPos.x, y: plotPos.y + i * dy }));
-
-//   return points.map((point, i) => {
-//     const offset = randnBm() * width - width * 0.5;
-//     return new CWCircle(point.x + offset, point.y, DEFAULT_RADII, getSequentialColor(i));
-//   });
-// };
+function randnBm() {
+  let u = 0;
+  let v = 0;
+  while (u === 0) u = Math.random(); // Converting [0,1) to (0,1)
+  while (v === 0) v = Math.random();
+  let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  num = num / 10.0 + 0.5; // Translate to 0 -> 1
+  if (num > 1 || num < 0) return randnBm(); // resample between 0 and 1
+  return num;
+}
 
 // Create a grid of n x n points to fit a plane (2D array)
 const makeGrid = (nx, ny, width, height) => {
@@ -123,6 +94,8 @@ const rotatePoint = (point, angle, center = { x: 0, y: 0 }) => {
   return { x: nx, y: ny };
 };
 
+const NUM_TIMELINE_POINTS = 7;
+
 export default (nx, ny, width, height, angle, center) => {
   // Create and center lattice
   const gridList = dedimensionalise(makeGrid(nx, ny, width, height));
@@ -131,22 +104,71 @@ export default (nx, ny, width, height, angle, center) => {
   // Rotate by specified angle
   const rotatedGrid = centeredGrid.map(point => rotatePoint(point, angle, center));
 
-  // Convert to Circle class instances
-  const gridCircles = rotatedGrid.map(
-    (point, i) => new CWCircle(point.x, point.y, DEFAULT_RADII, getSequentialColor(i))
-  );
-
   // Filter out circles too far away from center line
   // Plot center line
-  const centerLineRes = 7; // how many points make up center line -- "resolution"
-  const juristiction = height / centerLineRes; // distance (y-axis) within which a circle is classed as 'belonging to' a line point
+  const centerLineRes = 8; // how many points make up center line -- "resolution"
+  const juristiction = (0.5 * height) / centerLineRes; // distance (y-axis) within which a circle is classed as 'belonging to' a line point
   const xMax = width * 0.25; // distance (x-axis) outside of which a circle is discarded
-  const centerLine = new Array(centerLineRes).fill(1).map((point, i) => (i * height) / (centerLineRes - 1));
-  const filteredCircles = gridCircles.filter(point => {
+  const centerLine = new Array(centerLineRes)
+    .fill(1)
+    .map((_, i) => ({ x: center.x, y: center.y - height * 0.5 + (i * height) / (centerLineRes - 1) }));
+
+  const getOutlierFactor = point => {
     // Find line point for y-axis juristiction
-    const juristicialLinePoint = centerLine.find(linePoint => Math.abs(linePoint.y - point.y) < juristiction);
-    return juristicialLinePoint ? Math.abs(linePoint.x - point.x) <= xMax : false;
+    const juristicialLinePoint = centerLine.find(linePoint => Math.abs(linePoint.y - point.y) <= juristiction + 1);
+    const outlierFactor = juristicialLinePoint ? Math.min(1, Math.abs(juristicialLinePoint.x - point.x) / xMax) : 1;
+    // if (juristicialLinePoint) {
+    //   console.log('Diff: ', Math.abs(juristicialLinePoint.x - point.x), `outlier: ${outlierFactor}`);
+    // }
+    return outlierFactor;
+  };
+
+  // filter circles that are too far away from the main stream
+  // - How far off from the 'mainstream' they are determines if they are shown
+  const filteredPoints = rotatedGrid.filter(point => {
+    const outlier = getOutlierFactor(point);
+    const distFactor = Math.abs(randnBm() - 0.5) * 2;
+    return outlier ** 1.15 < 0.45 ? distFactor ** 2 > outlier ** 3 : false;
   });
 
-  return filteredCircles;
+  // Set up stuff for producing timeline points periodically
+  let currentBreakPoint = 0;
+  const breakPoints = new Array(NUM_TIMELINE_POINTS + 1)
+    .fill(1)
+    .map((_, i) => ({ x: center.x, y: center.y - height * 0.5 + (i * height) / (NUM_TIMELINE_POINTS - 1) }))
+    .slice(1);
+  const timelinePoints = [];
+
+  // Prepare Circle class instances
+  // First ones are rendered first (although there is some randomness) so have shortest delay
+  // Randomize radius
+  const gridCircles = filteredPoints.map((point, i) => {
+    let isTimelinePoint = false;
+    if (point.y > 0 && point.y < height) {
+      const nextBreakPos = currentBreakPoint + 1 > breakPoints.length ? height : breakPoints[currentBreakPoint].y;
+      console.log('next breakpoint: ', nextBreakPos);
+      if (point.y > nextBreakPos) {
+        currentBreakPoint += 1;
+        isTimelinePoint = true;
+        timelinePoints.push(point);
+        console.log('BREAK!!!!!!!!!!!!!!!!!!!');
+      }
+    }
+    const color = isTimelinePoint ? CHETWOOD_MAIN : getRandomColour();
+    const radius = isTimelinePoint
+      ? DEFAULT_RADII
+      : (Math.abs(randnBm() - 0.6) + 0.25) ** 1.35 *
+        DEFAULT_RADII *
+        (2.25 - 0.25 * Math.random() * getOutlierFactor(point));
+    const xOffset = (randnBm() ** 1.25 - 0.5) * ((0.35 * width) / nx);
+    const yOffset = (randnBm() ** 1.25 - 0.5) * ((0.35 * height) / ny);
+
+    return new CWCircle(point.x + xOffset, point.y + yOffset, radius, color);
+  });
+
+  // const centerCircles = centerLine.map(
+  //   (point, i) => new CWCircle(point.x, point.y, DEFAULT_RADII, getSequentialColor(i))
+  // );
+
+  return { circles: gridCircles, timelinePoints };
 };
