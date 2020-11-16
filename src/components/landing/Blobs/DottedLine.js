@@ -8,26 +8,50 @@ export default CustomPIXIComponent(
   {
     customDisplayObject: () => new PIXI.Graphics(),
     customApplyProps(instance, oldProps, newProps) {
-      const { startPoint, endPoint, dash = 16, gap = 8, thickness = 2, color = 0xffffff } = newProps;
+      const { startPoint, endPoint, dash = 16, gap = 8, thickness = 2.25, color = 0xffffff } = newProps;
+      const xDir = startPoint.x <= endPoint.x;
+      const yDir = startPoint.y <= endPoint.y;
+
+      const xCondition = () => (xDir ? startPoint.x >= endPoint.x : startPoint.x <= endPoint.x);
+      const yCondition = () => (yDir ? startPoint.y >= endPoint.y : startPoint.y <= endPoint.y);
+
       instance.clear();
       instance.lineStyle(thickness, color);
-
       const currentPosition = startPoint;
       instance.moveTo(currentPosition.x, currentPosition.y);
 
-      const absValues = {
-        toX: Math.abs(endPoint.x),
-        toY: Math.abs(endPoint.y),
-      };
+      console.log('Starting dotted line!', startPoint, endPoint, xDir, yDir, xCondition(), yCondition());
 
-      for (; Math.abs(currentPosition.x) < absValues.toX || Math.abs(currentPosition.y) < absValues.toY; ) {
-        currentPosition.x = Math.abs(currentPosition.x + dash) < absValues.toX ? currentPosition.x + dash : endPoint.x;
-        currentPosition.y = Math.abs(currentPosition.y + dash) < absValues.toY ? currentPosition.y + dash : endPoint.y;
+      while (!xCondition() || !yCondition()) {
+        // Check if x and y still need to continue, draw line if so
+        if (!xCondition()) {
+          const xDiff = Math.abs(endPoint.x - startPoint.x);
+          const dashLen = Math.min(xDiff, dash);
+
+          currentPosition.x += dashLen * (xDir ? 1 : -1);
+        }
+
+        if (!yCondition()) {
+          const yDiff = Math.abs(endPoint.y - startPoint.y);
+          const dashLen = Math.min(yDiff, dash);
+
+          currentPosition.y += dashLen * (yDir ? 1 : -1);
+        }
 
         instance.lineTo(currentPosition.x, currentPosition.y);
 
-        currentPosition.x = Math.abs(currentPosition.x + gap) < absValues.toX ? currentPosition.x + gap : endPoint.x;
-        currentPosition.y = Math.abs(currentPosition.y + gap) < absValues.toY ? currentPosition.y + gap : endPoint.y;
+        // Check if x and y need to continue, if so: move across gap , if not: set currentPosition to end
+        if (!xCondition()) {
+          currentPosition.x += gap * (xDir ? 1 : -1);
+        } else {
+          currentPosition.x = endPoint.x;
+        }
+
+        if (!yCondition()) {
+          currentPosition.y += gap * (yDir ? 1 : -1);
+        } else {
+          currentPosition.y = endPoint.y;
+        }
 
         instance.moveTo(currentPosition.x, currentPosition.y);
       }
