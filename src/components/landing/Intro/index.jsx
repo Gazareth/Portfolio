@@ -12,7 +12,7 @@ export const Intro = () => {
   return (
     <Wrapper>
       <Header />
-      <IntroWrapper as={Container}>
+      {/* <IntroWrapper as={Container}>
         <Details theme={theme}>
           <h1>Hi There!</h1>
           <h4>CW Blobs Demo</h4>
@@ -23,7 +23,7 @@ export const Intro = () => {
         <Thumbnail>
           <img src={dev} alt="I’m Gareth and I’m a !" />
         </Thumbnail>
-      </IntroWrapper>
+      </IntroWrapper> */}
     </Wrapper>
   );
 };
