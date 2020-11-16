@@ -6,9 +6,9 @@ export default () => (
   <Layout>
     <SEO />
     <Intro />
+    <Blobs />
     <Projects />
     <Skills />
     <Contact />
-    <Blobs />
   </Layout>
 );
