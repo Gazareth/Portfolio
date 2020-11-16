@@ -9,7 +9,7 @@ import { Wrapper, SkillsWrapper } from './styles';
 
 const STAGE_DIMENSIONS = {
   width: window.innerWidth * 0.8,
-  height: 1500,
+  height: 2000,
 };
 
 const STAGE_CENTER = {
@@ -42,7 +42,7 @@ const BG_PROPS = {
 //   STAGE_OPTIONS.height * 0.75
 // );
 
-const blobPointInfo = plotter(52, 52, BLOBSTREAM_WIDTH, BLOBSTREAM_HEIGHT, 45, STAGE_CENTER);
+const blobPointInfo = plotter(50, 50, BLOBSTREAM_WIDTH, BLOBSTREAM_HEIGHT, 45, STAGE_CENTER);
 // const blobs = plotter(15, 15, STAGE_OPTIONS.width * 0.7, STAGE_OPTIONS.height * 0.7, 45, STAGE_CENTER);
 // const blobs = plotter(12, 2, STAGE_OPTIONS.width * 0.85, STAGE_OPTIONS.height * 0.65, 0, STAGE_CENTER);
 
