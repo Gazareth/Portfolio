@@ -35,6 +35,7 @@ const colours = [
 ].map(col => PIXI.utils.string2hex(col));
 
 export const DEFAULT_RADII = 18;
+const TIMELINE_RADIUS = DEFAULT_RADII * 1.05;
 
 const getRandomColour = () => colours[Math.floor(Math.random() * colours.length)];
 
@@ -96,39 +97,41 @@ const rotatePoint = (point, angle, center = { x: 0, y: 0 }) => {
 
 const NUM_TIMELINE_POINTS = 7;
 
-export default (nx, ny, width, height, angle, center) => {
-  // Create and center lattice
+export default (spacingX, spacingY, width, height, angle, center) => {
+  const nx = Math.round(width / spacingX);
+  const ny = Math.round(height / spacingY);
+
+  // GENERATE and center lattice of points
   const gridList = dedimensionalise(makeGrid(nx, ny, width, height));
   const centeredGrid = gridList.map(point => ({ x: point.x + center.x, y: point.y + center.y }));
 
-  // Rotate by specified angle
+  // ROTATE by specified angle
   const rotatedGrid = centeredGrid.map(point => rotatePoint(point, angle, center));
 
-  // Filter out circles too far away from center line
-  // Plot center line
+  // DETECT circles too far away from center line
+  // Plot a 'center' line
   const centerLineRes = 8; // how many points make up center line -- "resolution"
   const juristiction = (0.5 * height) / centerLineRes; // distance (y-axis) within which a circle is classed as 'belonging to' a line point
-  const xMax = width * 0.25; // distance (x-axis) outside of which a circle is discarded
-  const centerLine = new Array(centerLineRes)
-    .fill(1)
-    .map((_, i) => ({ x: center.x, y: center.y - height * 0.5 + (i * height) / (centerLineRes - 1) }));
+  const xMax = width * 0.23; // distance (x-axis) outside of which a circle is discarded
+  const centerLine = new Array(centerLineRes).fill(1).map((_, i) => ({
+    x: center.x,
+    y: height * 0.035 + center.y - height * 0.5 + (i * height * 0.9) / (centerLineRes - 1),
+  }));
 
   const getOutlierFactor = point => {
     // Find line point for y-axis juristiction
     const juristicialLinePoint = centerLine.find(linePoint => Math.abs(linePoint.y - point.y) <= juristiction + 1);
     const outlierFactor = juristicialLinePoint ? Math.min(1, Math.abs(juristicialLinePoint.x - point.x) / xMax) : 1;
-    // if (juristicialLinePoint) {
-    //   console.log('Diff: ', Math.abs(juristicialLinePoint.x - point.x), `outlier: ${outlierFactor}`);
-    // }
+
     return outlierFactor;
   };
 
-  // filter circles that are too far away from the main stream
+  // FILTER circles that are too far away from the main stream
   // - How far off from the 'mainstream' they are determines if they are shown
   const filteredPoints = rotatedGrid.filter(point => {
     const outlier = getOutlierFactor(point);
     const distFactor = Math.abs(randnBm() - 0.5) * 2;
-    return outlier ** 1.15 < 0.45 ? distFactor ** 2 > outlier ** 3 : false;
+    return outlier ** 1.15 < 0.45 ? distFactor ** 2.25 > outlier ** 2.75 : false;
   });
 
   // Set up stuff for producing timeline points periodically
@@ -138,30 +141,38 @@ export default (nx, ny, width, height, angle, center) => {
     .map((_, i) => ({ x: center.x, y: center.y - height * 0.5 + (i * height) / (NUM_TIMELINE_POINTS - 1) }))
     .slice(1);
   const timelinePoints = [];
+  let isLeft = true; // start on the left side, alternate
 
-  // Prepare Circle class instances
+  // Prepare instances of the Circle class
   // First ones are rendered first (although there is some randomness) so have shortest delay
   // Randomize radius
   const gridCircles = filteredPoints.map((point, i) => {
     let isTimelinePoint = false;
     if (point.y > 0 && point.y < height) {
       const nextBreakPos = currentBreakPoint + 1 > breakPoints.length ? height : breakPoints[currentBreakPoint].y;
-      console.log('next breakpoint: ', nextBreakPos);
+      // console.log('next breakpoint: ', nextBreakPos);
       if (point.y > nextBreakPos) {
-        currentBreakPoint += 1;
-        isTimelinePoint = true;
-        timelinePoints.push(point);
-        console.log('BREAK!!!!!!!!!!!!!!!!!!!');
+        let goToNext = true;
+        if (!isLeft) {
+          goToNext = point.x > center.x + 0.25 * xMax;
+        } else {
+          goToNext = point.x < center.x - 0.1 * xMax;
+        }
+        if (goToNext) {
+          currentBreakPoint += 1;
+          isTimelinePoint = true;
+          timelinePoints.push(point);
+          isLeft = !isLeft;
+        }
       }
     }
     const color = isTimelinePoint ? CHETWOOD_MAIN : getRandomColour();
+    const radiusFactor = (randnBm() * 0.665 + 0.335) ** 0.1 * (2.66 - 0.5 * getOutlierFactor(point));
     const radius = isTimelinePoint
-      ? DEFAULT_RADII
-      : (Math.abs(randnBm() - 0.6) + 0.25) ** 1.35 *
-        DEFAULT_RADII *
-        (2.25 - 0.25 * Math.random() * getOutlierFactor(point));
-    const xOffset = (randnBm() ** 1.25 - 0.5) * ((0.35 * width) / nx);
-    const yOffset = (randnBm() ** 1.25 - 0.5) * ((0.35 * height) / ny);
+      ? TIMELINE_RADIUS
+      : (Math.abs(randnBm() - 0.6) + 0.25) ** 1.35 * DEFAULT_RADII * radiusFactor;
+    const xOffset = ((randnBm() ** 1.3 - 0.5) * ((0.35 * width) / nx) * DEFAULT_RADII) / radius;
+    const yOffset = ((randnBm() ** 1.3 - 0.5) * ((0.35 * height) / ny) * DEFAULT_RADII) / radius;
 
     return new CWCircle(point.x + xOffset, point.y + yOffset, radius, color);
   });
