@@ -1,7 +1,8 @@
 import React, { useContext, useState, useMemo } from 'react';
 
+import * as PIXI from 'pixi.js';
 import { Stage, Container } from 'react-pixi-fiber';
-import Circle from './Circle';
+import CirclesController from './Circle';
 import Rectangle from './Rectangle';
 import timelineBoxes from './Timeline/timelineBoxes';
 import plotter from './plotter';
@@ -44,9 +45,7 @@ export const Blobs = () => (
       <Stage options={STAGE_OPTIONS}>
         <Container>
           <Rectangle {...BG_PROPS} />
-          {blobPointInfo.circles.map((blob, i) => (
-            <Circle key={i} {...blob} />
-          ))}
+          <CirclesController blobs={blobPointInfo} />
           {timelineBoxes({
             stageWidth: STAGE_DIMENSIONS.width,
             stageHeight: STAGE_DIMENSIONS.height,

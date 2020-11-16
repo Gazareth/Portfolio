@@ -40,17 +40,15 @@ const TIMELINE_RADIUS = DEFAULT_RADII * 1.05;
 const getRandomColour = () => colours[Math.floor(Math.random() * colours.length)];
 
 class CWCircle {
-  constructor(x, y, radius, fill, opacity = 1) {
+  constructor(x, y, radius, fill, enterDuration) {
     this.x = x;
     this.y = y;
     this.radius = radius;
     this.fill = fill;
-    this.opacity = opacity;
 
-    this.delay = 0;
-    this.enterTime = 0;
-
-    this.entered = false;
+    this.birthTime = new Date().getTime();
+    this.enterDelay = 1000 + y * 1 + 0.5 * y * Math.random();
+    this.enterDuration = 650 + Math.random(450);
   }
 }
 
