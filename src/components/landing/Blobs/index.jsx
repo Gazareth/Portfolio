@@ -3,7 +3,7 @@ import React, { useContext, useState, useMemo } from 'react';
 import { Stage, Container } from 'react-pixi-fiber';
 import Circle from './Circle';
 import Rectangle from './Rectangle';
-import TimelineBox from './TimelineBox';
+import timelineBoxes from './Timeline/timelineBoxes';
 import plotter from './plotter';
 import { Wrapper, SkillsWrapper } from './styles';
 
@@ -47,7 +47,11 @@ export const Blobs = () => (
           {blobPointInfo.circles.map((blob, i) => (
             <Circle key={i} {...blob} />
           ))}
-          <TimelineBox x={50} y={150} timelinePoints={blobPointInfo.timelinePoints} />
+          {timelineBoxes({
+            stageWidth: STAGE_DIMENSIONS.width,
+            stageHeight: STAGE_DIMENSIONS.height,
+            timelinePointsInfo: blobPointInfo.timelinePoints,
+          })}
         </Container>
       </Stage>
     </SkillsWrapper>
