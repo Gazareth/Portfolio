@@ -26,21 +26,13 @@ const STAGE_OPTIONS = {
   // resolution: 2,
 };
 
-const BLOBSTREAM_WIDTH = Math.min(Math.max(STAGE_DIMENSIONS.width * 0.85, 1000), 2000);
+const BLOBSTREAM_WIDTH = Math.min(Math.max(STAGE_DIMENSIONS.width * 0.85, 1000), 1200);
 const BLOBSTREAM_HEIGHT = STAGE_DIMENSIONS.height * 0.9;
 
 const BG_PROPS = {
   ...STAGE_DIMENSIONS,
   fill: 0x202020,
 };
-
-// const blobs = plotter(
-//   30,
-//   STAGE_OPTIONS.width * 0.5,
-//   STAGE_OPTIONS.height * 0.15,
-//   STAGE_OPTIONS.width * 0.5,
-//   STAGE_OPTIONS.height * 0.75
-// );
 
 const blobPointInfo = plotter(50, 50, BLOBSTREAM_WIDTH, BLOBSTREAM_HEIGHT, 45, STAGE_CENTER);
 // const blobs = plotter(15, 15, STAGE_OPTIONS.width * 0.7, STAGE_OPTIONS.height * 0.7, 45, STAGE_CENTER);

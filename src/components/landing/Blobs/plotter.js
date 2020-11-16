@@ -150,8 +150,8 @@ export default (spacingX, spacingY, width, height, angle, center) => {
   // - How far off from the 'mainstream' they are determines if they are shown
   const filteredPoints = associatedPoints.filter(point => {
     const outlier = getOutlierFactor(point);
-    const distFactor = Math.abs(randnBm() - 0.5) * 2; // ratio - how far from normal distribution center 0..1
-    return outlier ** 1.2 < 0.45 ? distFactor ** 1.5 > outlier ** 1.75 : false;
+    const distFactor = Math.abs(randnBmZero()); // ratio - how far from normal distribution center 0..1
+    return outlier ** 1.2 < 0.45 ? distFactor * 1.2 > outlier : false;
   });
 
   // Set up stuff for producing timeline points periodically
@@ -176,20 +176,20 @@ export default (spacingX, spacingY, width, height, angle, center) => {
       if (point.y > nextBreakPos) {
         let goToNext = true;
         if (!isLeft) {
-          goToNext = point.x > juristicialPoint.x + 0.05 * xMax;
+          goToNext = point.x > juristicialPoint.x + xMax * 0.05;
         } else {
-          goToNext = point.x < juristicialPoint.x - 0.05 * xMax;
+          goToNext = point.x < juristicialPoint.x - xMax * 0.05;
         }
         if (goToNext) {
           currentBreakPoint += 1;
           isTimelinePoint = true;
-          timelinePoints.push(point);
+          timelinePoints.push({ ...point, isLeft });
           isLeft = !isLeft;
         }
       }
     }
     const color = isTimelinePoint ? CHETWOOD_MAIN : getRandomColour();
-    const radiusFactor = (randnBm() * 0.9 + 0.1) ** 1.56 * (1.85 - 0.5 * getOutlierFactor(point));
+    const radiusFactor = (randnBm() * 0.9 + 0.1) ** 1.56 * (1.85 - 1.45 * getOutlierFactor(point) ** 1.5);
 
     const radius = isTimelinePoint ? TIMELINE_RADIUS : DEFAULT_RADII * radiusFactor;
     const xOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * width)) / nx) * (1.2 - radiusFactor);

@@ -20,8 +20,6 @@ export default CustomPIXIComponent(
       const currentPosition = startPoint;
       instance.moveTo(currentPosition.x, currentPosition.y);
 
-      console.log('Starting dotted line!', startPoint, endPoint, xDir, yDir, xCondition(), yCondition());
-
       while (!xCondition() || !yCondition()) {
         // Check if x and y still need to continue, draw line if so
         if (!xCondition()) {
