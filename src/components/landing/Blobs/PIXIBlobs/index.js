@@ -1,6 +1,5 @@
 import React from 'react';
 
-import * as PIXI from 'pixi.js';
 import { Stage, Container } from 'react-pixi-fiber';
 import CirclesController from './Circle';
 import Rectangle from './Rectangle';
