@@ -1,5 +1,6 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React from 'react';
 
+import * as PIXI from 'pixi.js';
 import { Stage, Container } from 'react-pixi-fiber';
 import CirclesController from './Circle';
 import Rectangle from './Rectangle';
@@ -7,8 +8,8 @@ import timelineBoxes from './Timeline/timelineBoxes';
 import plotter from './plotter';
 
 const STAGE_DIMENSIONS = {
-  width: window.innerWidth * 0.7,
-  height: 2000,
+  width: Math.min(window.innerWidth * 0.8, 2048),
+  height: 3500,
 };
 
 const STAGE_CENTER = {
@@ -21,6 +22,7 @@ const STAGE_OPTIONS = {
   width: STAGE_DIMENSIONS.width,
   height: STAGE_DIMENSIONS.height,
   antialias: true,
+  forceCanvas: true,
   // forceFXAA: true,
   // resolution: 2,
 };
@@ -37,7 +39,10 @@ const blobPointInfo = plotter(50, 50, BLOBSTREAM_WIDTH, BLOBSTREAM_HEIGHT, 45, S
 // const blobs = plotter(15, 15, STAGE_OPTIONS.width * 0.7, STAGE_OPTIONS.height * 0.7, 45, STAGE_CENTER);
 // const blobs = plotter(12, 2, STAGE_OPTIONS.width * 0.85, STAGE_OPTIONS.height * 0.65, 0, STAGE_CENTER);
 
-export const Blobs = () => (
+const app = new PIXI.Application(STAGE_OPTIONS);
+
+const Blobs = () => (
+  // <Stage app={app}>
   <Stage options={STAGE_OPTIONS}>
     <Container>
       <Rectangle {...BG_PROPS} />
@@ -50,3 +55,5 @@ export const Blobs = () => (
     </Container>
   </Stage>
 );
+
+export default Blobs;

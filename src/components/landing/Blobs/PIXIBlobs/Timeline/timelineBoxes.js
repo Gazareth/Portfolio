@@ -4,6 +4,15 @@ import TimelineBox from './TimelineBox';
 import CoffeeCup from './Images/CoffeeCup.png';
 import HighStreet from './Images/HighStreet.png';
 import LondonBridge from './Images/LondonBridge.png';
+import Postbox from './Images/Postbox.png';
+import SkyscraperFar from './Images/SkyscraperFar.png';
+import Pavillion from './Images/Pavillion.png';
+import SmartSave from './Images/SmartSave.png';
+import Teacher from './Images/Teacher.png';
+import LondonBus from './Images/LondonBus.png';
+import ComputerFuture from './Images/ComputerFuture.png';
+import LaptopDesk from './Images/LaptopDesk.png';
+import Skyscrapers from './Images/Skyscrapers.png';
 
 import { DEFAULT_RADII } from '../plotter';
 
@@ -35,12 +44,60 @@ const timelineInfo = [
     dateText: 'September 2017',
     timelineText: 'Backed by Elliott Advisors UK with £150m investment',
   },
-  // {
-  //   imgSrc: LondonBridge,
-  //   imgHeight: 168,
-  //   dateText: 'February 2018',
-  //   timelineText: 'LiveLend launched, under a Consumer Credit Licence',
-  // },
+  {
+    imgSrc: Postbox,
+    imgHeight: 153,
+    dateText: 'December 2017',
+    timelineText: 'Restricted Bank Licence granted',
+  },
+  {
+    imgSrc: SkyscraperFar,
+    imgHeight: 178,
+    dateText: 'February 2018',
+    timelineText: 'LiveLend launched, under a Consumer Credit Licence',
+  },
+  {
+    imgSrc: Pavillion,
+    imgHeight: 168,
+    dateText: 'December 2018',
+    timelineText: 'Full UK Banking Licence approved by the PRA and FCA',
+  },
+  {
+    imgSrc: SmartSave,
+    imgHeight: 152,
+    dateText: 'March 2019',
+    timelineText: 'Launched our first deposit brand, SmartSave',
+  },
+  {
+    imgSrc: Teacher,
+    imgHeight: 152,
+    dateText: 'October 2019',
+    timelineText: 'Chetwood team grew to 50 people',
+  },
+  {
+    imgSrc: LondonBus,
+    imgHeight: 152,
+    dateText: 'January 2020',
+    timelineText: 'London office opened',
+  },
+  {
+    imgSrc: ComputerFuture,
+    imgHeight: 152,
+    dateText: 'May 2020',
+    timelineText: 'Launched Chetwood built bleeding-edge decisioning capability',
+  },
+  {
+    imgSrc: LaptopDesk,
+    imgHeight: 153,
+    dateText: 'July 2020',
+    timelineText: 'Chetwood team grew to 100 people',
+  },
+  {
+    imgSrc: Skyscrapers,
+    imgHeight: 153,
+    dateText: 'September 2020',
+    timelineText: 'BetterBorrow launched',
+  },
 ];
 
 // Make a point
@@ -53,7 +110,6 @@ const TimelineBoxes = ({ timelinePointsInfo, stageWidth, stageHeight }) => {
       {timelinePointsInfo.map((pointInfo, i) => {
         if (!timelineInfo[i]) return null;
         const info = { ...pointInfo, ...timelineInfo[i] };
-        console.log('Building timelineBox: ', info);
         const boxHeight = info.imgHeight;
         const BOX_POINT_OFFSET_X = info.isLeft ? BOX_POINT_OFFSET_X_LEFT : BOX_POINT_OFFSET_X_RIGHT;
 
@@ -65,11 +121,11 @@ const TimelineBoxes = ({ timelinePointsInfo, stageWidth, stageHeight }) => {
         const boxPosY = bottomPointY - boxHeight;
 
         const offsetTimelinePosition = p(info.x + TIMELINE_POINT_OFFSET * (info.isLeft ? -1 : 1), info.y);
-        console.log(' Still Building timelineBox...', boxPosX, boxPosY);
 
         return (
           <TimelineBox
             key={info.dateText}
+            timelineIndex={i}
             boxPosition={p(boxPosX, boxPosY)}
             joinPointPosition={p(bottomPointX, bottomPointY)}
             timelinePointPosition={offsetTimelinePosition}
