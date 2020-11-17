@@ -34,11 +34,11 @@ const BG_PROPS = {
   fill: 0x202020,
 };
 
-const blobPointInfo = plotter(50, 50, BLOBSTREAM_WIDTH, BLOBSTREAM_HEIGHT, 45, STAGE_CENTER);
+const blobPointInfo = plotter(50, BLOBSTREAM_WIDTH, BLOBSTREAM_HEIGHT, STAGE_CENTER, 45);
 // const blobs = plotter(15, 15, STAGE_OPTIONS.width * 0.7, STAGE_OPTIONS.height * 0.7, 45, STAGE_CENTER);
 // const blobs = plotter(12, 2, STAGE_OPTIONS.width * 0.85, STAGE_OPTIONS.height * 0.65, 0, STAGE_CENTER);
 
-const app = new PIXI.Application(STAGE_OPTIONS);
+// const app = new PIXI.Application(STAGE_OPTIONS);
 
 const Blobs = () => (
   // <Stage app={app}>

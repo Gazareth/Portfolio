@@ -47,12 +47,12 @@ class CWCircle {
     this.fill = fill;
 
     this.birthTime = new Date().getTime();
-    this.enterDelay = 1000 + y * 1 + 0.5 * y * Math.random();
-    this.enterDuration = 650 + Math.random(450);
+    this.enterDelay = 1500 + y * 0.75 + 0.5 * y * randnBm();
+    this.enterDuration = 450 + randnBm() * 625;
   }
 }
 
-// // Box muller transform to get a normal distribution (https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve)
+// Box muller transform to get a normal distribution (https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve)
 function randnBm() {
   let u = 0;
   let v = 0;
@@ -67,16 +67,16 @@ function randnBm() {
 const randnBmZero = () => randnBm() * 2 - 1;
 
 // Create a grid of n x n points to fit a plane (2D array)
-const makeGrid = (nx, ny, width, height) => {
-  const xSpacing = width / nx;
-  const ySpacing = height / ny;
-  const centerOffsetX = -xSpacing * (nx - 1) * 0.5;
-  const centerOffsetY = -ySpacing * (ny - 1) * 0.5;
+const makeGrid = (n, sideLength) => {
+  const spacing = sideLength / n;
 
-  const row = Array(nx).fill({ x: 0, y: 0 }); // a row of nx columns
-  const rows = Array(ny).fill([...row]); // an array of ny rows
+  // Shift the grid to the center with these coords
+  const centerOffset = -spacing * (n - 1) * 0.5;
+
+  const row = Array(n).fill({ x: 0, y: 0 }); // a row of nx columns
+  const rows = Array(n).fill([...row]); // an array of ny rows
   return rows.map((currentRow, yIndex) =>
-    currentRow.map((_, xIndex) => ({ x: centerOffsetX + xIndex * xSpacing, y: centerOffsetY + yIndex * ySpacing }))
+    currentRow.map((_, xIndex) => ({ x: centerOffset + xIndex * spacing, y: centerOffset + yIndex * spacing }))
   );
 };
 
@@ -95,27 +95,27 @@ const rotatePoint = (point, angle, center = { x: 0, y: 0 }) => {
   return { x: nx, y: ny };
 };
 
-const NUM_TIMELINE_POINTS = 7;
+const NUM_TIMELINE_POINTS = 12;
 
-export default (spacingX, spacingY, width, height, angle, center) => {
-  const nx = Math.round(width / spacingX);
-  const ny = Math.round(height / spacingY);
-
+// Forms a stream of points along a curve
+// - Builds a grid, n x n, equally spaced points;
+// - Rotates it by `${angle}`
+// - Builds a 'main stream' curve
+// - Filters out points too far away from the 'main stream'
+//    - Each point gets an 'outlierFactor' to indicate how far it is from the 'main stream'
+const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, streamJuristiction) => {
   // GENERATE and center lattice of points
-  const gridList = dedimensionalise(makeGrid(nx, ny, width, height));
-  const centeredGrid = gridList.map(point => ({ x: point.x + center.x, y: point.y + center.y }));
+  const gridList = dedimensionalise(makeGrid(n, gridLength));
+  let blobs = gridList.map(point => ({ x: point.x + center.x, y: point.y + center.y }));
 
   // ROTATE by specified angle
-  const rotatedGrid = centeredGrid.map(point => rotatePoint(point, angle, center));
+  blobs = blobs.map(point => rotatePoint(point, angle, center));
 
-  // DETECT circles too far away from center line
-  // Plot a 'center' line
-  const centerLineRes = 24; // how many points make up center line -- "resolution"
-  const juristiction = height / centerLineRes; // distance (y-axis) within which a circle is classed as 'belonging to' a line point
-  const xMax = width * 0.375; // distance (x-axis) outside of which a circle is discarded
-  const centerLine = new Array(centerLineRes).fill(1).map((_, i) => {
-    const y = center.y - height * 0.48 + (i * height * 0.9) / (centerLineRes - 1);
-    const curveAngle = (y * 8) / (height * 0.8); // this is the 'angle' used by the sin/cos functions, not visual angle
+  // Plot 'main stream' curve
+  const xMax = streamWidth; // distance (x-axis) outside of which a circle is invariably discarded
+  const streamCurve = new Array(streamRes).fill(1).map((_, i) => {
+    const y = center.y - gridLength * 0.48 + (i * gridLength * 0.9) / (streamRes - 1);
+    const curveAngle = (y * 8) / (gridLength * 0.8); // this is the 'angle' used by the sin/cos functions, not visual angle
     const offsetFactor = -(Math.cos(curveAngle) ** 2) + Math.sin(curveAngle); // Curve !!!
     const xOffset = -xMax * 0.3 * offsetFactor;
     return {
@@ -123,34 +123,51 @@ export default (spacingX, spacingY, width, height, angle, center) => {
       y,
     };
   });
+
   // ASSOCIATE each point to a 'juristicial' point from the 'mainstream' line
   // if a point is too far from its juristicial point, it has an increasing chance to get filtered
-  const associatedPoints = rotatedGrid.map(point => {
-    // const juristicialPoint = centerLine.find(linePoint => Math.abs(linePoint.y - point.y) <= juristiction + 1);
+  blobs = blobs.map(point => {
     // Find closest juristicial point
-    const distance = p => Math.sqrt(Math.pow(point.x - p.x, 2) + Math.pow(point.y - p.y, 2));
-    const juristicialPoint = centerLine.reduce((a, b) => (distance(a) < distance(b) ? a : b));
-    if (!juristicialPoint) console.log(`POINT ${point.x}, ${point.y} DOESN'T HAVE A JURISTICIAL POINT!!!`);
-    return { ...point, juristicialPoint };
+    // (Use a quick 'distance' function);
+    const distance = p => Math.sqrt((point.x - p.x) ** 2 + (point.y - p.y) ** 2);
+    const juristicialPoint = streamCurve.reduce((a, b) => (distance(a) < distance(b) ? a : b));
+
+    // Get x and y distances from juristicial point
+    const xDistance = Math.abs(juristicialPoint.x - point.x);
+    const yDistance = Math.abs(juristicialPoint.y - point.y);
+
+    // Calc outlier factor
+    const outlierFactor = yDistance < streamJuristiction ? Math.min(1, xDistance / xMax) : 1;
+
+    // if (!juristicialPoint) console.log(`POINT ${point.x}, ${point.y} DOESN'T HAVE A JURISTICIAL POINT!!!`);
+    return { ...point, outlierFactor, juristicialPoint };
   });
-
-  const getOutlierFactor = point => {
-    // Find line point for y-axis juristiction
-    const juristicialLinePoint = point.juristicialPoint;
-    const xDistance = Math.abs(juristicialLinePoint.x - point.x);
-    const yDistance = Math.abs(juristicialLinePoint.y - point.y);
-    const outlierFactor = yDistance < juristiction ? Math.min(1, xDistance / xMax) : 1;
-
-    return outlierFactor;
-  };
 
   // FILTER circles that are too far away from the main stream
   // - How far off from the 'mainstream' they are determines if they are shown
-  const filteredPoints = associatedPoints.filter(point => {
-    const outlier = getOutlierFactor(point);
+  blobs = blobs.filter(point => {
+    const outlier = point.outlierFactor;
     const distFactor = Math.abs(randnBmZero()); // ratio - how far from normal distribution center 0..1
+
     return outlier ** 1.2 < 0.45 ? distFactor * 1.2 > outlier : false;
   });
+
+  // return streamCurve.map(streamPoint => ({ ...streamPoint, juristicialPoint: { x: 0, y: 0 }, outlierFactor: 0 }));
+  return blobs;
+};
+
+export default (spacing, width, height, center, angle) => {
+  // The grid must be a square because when it rotates it needs to have enough points
+  const gridLength = width >= height ? width : height;
+  const n = Math.round(gridLength / spacing);
+
+  const streamRes = 24; // how many points make up 'main stream' line -- "resolution"
+  const streamJuristiction = height / streamRes; // distance (y-axis) within which a grid point is classed as 'belonging to' a stream point
+
+  console.log(`Generating ${n}x${n} points!`);
+
+  const streamWidth = width * 0.35;
+  let points = makeCWGrid(n, gridLength, center, angle, streamWidth, streamRes, streamJuristiction);
 
   // Set up stuff for producing timeline points periodically
   let currentBreakPoint = 0;
@@ -160,12 +177,12 @@ export default (spacingX, spacingY, width, height, angle, center) => {
     .slice(1);
   const timelinePoints = [];
   let isLeft = true; // start on the left side, alternate
-  console.log(breakPoints);
+  // console.log(breakPoints);
 
   // Prepare instances of the Circle class
   // First ones are rendered first (although there is some randomness) so have shortest delay
   // Randomize radius
-  const gridCircles = filteredPoints.map((point, i) => {
+  points = points.map(point => {
     let isTimelinePoint = false;
     if (point.y > 0 && point.y < height) {
       const nextBreakPos = currentBreakPoint + 1 > breakPoints.length ? height : breakPoints[currentBreakPoint].y;
@@ -174,9 +191,9 @@ export default (spacingX, spacingY, width, height, angle, center) => {
       if (point.y > nextBreakPos) {
         let goToNext = true;
         if (!isLeft) {
-          goToNext = point.x > juristicialPoint.x + xMax * 0.05;
+          goToNext = point.x > juristicialPoint.x + streamWidth * 0.05;
         } else {
-          goToNext = point.x < juristicialPoint.x - xMax * 0.05;
+          goToNext = point.x < juristicialPoint.x - streamWidth * 0.05;
         }
         if (goToNext) {
           currentBreakPoint += 1;
@@ -187,20 +204,14 @@ export default (spacingX, spacingY, width, height, angle, center) => {
       }
     }
     const color = isTimelinePoint ? CHETWOOD_MAIN : getRandomColour();
-    const radiusFactor = (randnBm() * 0.9 + 0.1) ** 1.56 * (1.85 - 1.45 * getOutlierFactor(point) ** 1.5);
+    const radiusFactor = (randnBm() * 0.9 + 0.1) ** 1.56 * (1.85 - 1.45 * point.outlierFactor ** 1.5);
 
     const radius = isTimelinePoint ? TIMELINE_RADIUS : DEFAULT_RADII * radiusFactor;
-    const xOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * width)) / nx) * (1.2 - radiusFactor);
-    const yOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * height)) / ny) * (1.2 - radiusFactor);
+    const xOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * width)) / n) * (1.2 - radiusFactor);
+    const yOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * height)) / n) * (1.2 - radiusFactor);
 
     return new CWCircle(point.x + xOffset, point.y + yOffset, radius, color);
   });
 
-  console.log(timelinePoints);
-
-  // const centerCircles = centerLine.map(
-  //   (point, i) => new CWCircle(point.x, point.y, DEFAULT_RADII, getSequentialColor(i))
-  // );
-
-  return { circles: gridCircles, timelinePoints };
+  return { circles: points, timelinePoints };
 };
