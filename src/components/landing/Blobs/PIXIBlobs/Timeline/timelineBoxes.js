@@ -25,7 +25,7 @@ const BOX_POINT_OFFSET_Y = 38;
 const IMAGE_WIDTH = 152; // All images have the same width but different heights
 const BOX_JOIN_OFFSET = IMAGE_WIDTH * 0.35;
 
-const timelineInfo = [
+export const timelineInfo = [
   {
     imgSrc: CoffeeCup,
     imgHeight: 152,

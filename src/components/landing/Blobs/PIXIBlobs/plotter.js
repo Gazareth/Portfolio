@@ -1,5 +1,7 @@
 import * as PIXI from 'pixi.js';
 
+import pick from 'lodash/pick';
+
 const CHETWOOD_MAIN = PIXI.utils.string2hex('#00d364');
 
 const colours = [
@@ -46,9 +48,12 @@ class CWCircle {
     this.radius = radius;
     this.fill = fill;
 
-    this.birthTime = new Date().getTime();
     this.enterDelay = 1500 + y * 0.75 + 0.5 * y * randnBm();
-    this.enterDuration = 450 + randnBm() * 625;
+    this.enterDuration = 450 + randnBm() * 625 - Math.min(y / 2, 500);
+  }
+
+  toJson() {
+    return pick(this, ['x', 'y', 'radius', 'fill', 'enterDelay', 'enterDuration']);
   }
 }
 
@@ -119,6 +124,8 @@ const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, stream
     const offsetFactor = -(Math.cos(curveAngle) ** 2) + Math.sin(curveAngle); // Curve !!!
     const xOffset = -xMax * 0.3 * offsetFactor;
     return {
+      outlierFactor: 0,
+      juristicialPoint: { x: center.x + xOffset, y },
       x: center.x + xOffset,
       y,
     };
@@ -153,10 +160,10 @@ const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, stream
   });
 
   // return streamCurve.map(streamPoint => ({ ...streamPoint, juristicialPoint: { x: 0, y: 0 }, outlierFactor: 0 }));
-  return blobs;
+  return streamCurve;
 };
 
-export default (spacing, width, height, center, angle) => {
+export default (spacing, width, height, streamWidth, center, angle) => {
   // The grid must be a square because when it rotates it needs to have enough points
   const gridLength = width >= height ? width : height;
   const n = Math.round(gridLength / spacing);
@@ -166,7 +173,7 @@ export default (spacing, width, height, center, angle) => {
 
   console.log(`Generating ${n}x${n} points!`);
 
-  const streamWidth = width * 0.35;
+  // const streamWidth = width * 0.35;
   let points = makeCWGrid(n, gridLength, center, angle, streamWidth, streamRes, streamJuristiction);
 
   // Set up stuff for producing timeline points periodically
@@ -210,7 +217,7 @@ export default (spacing, width, height, center, angle) => {
     const xOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * width)) / n) * (1.2 - radiusFactor);
     const yOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * height)) / n) * (1.2 - radiusFactor);
 
-    return new CWCircle(point.x + xOffset, point.y + yOffset, radius, color);
+    return new CWCircle(point.x + xOffset, point.y + yOffset, radius, color).toJson();
   });
 
   return { circles: points, timelinePoints };

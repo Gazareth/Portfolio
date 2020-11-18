@@ -55,7 +55,7 @@ const TimelineBox = ({
   const [animationProgress] = useEnterAnimation({
     ticker: app.ticker,
     enterTime: new Date().getTime(),
-    enterDelay: 2500 + 250 * timelineIndex,
+    enterDelay: 4000 + 450 * timelineIndex,
     enterDuration: 1000,
   });
 
