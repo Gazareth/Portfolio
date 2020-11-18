@@ -6,12 +6,12 @@ import useEnterAnimation from '../../../../hooks/useEnterAnimation';
 import DownArrow from './GreenDownArrow.png';
 
 const DownArrowSprite = ({ scale, ...props }) => (
-  <Sprite texture={PIXI.Texture.from(DownArrow)} {...props} anchor={0.5} pivot={0.5} scale={scale * 0.5} />
+  <Sprite texture={PIXI.Texture.from(DownArrow)} anchor={0.5} pivot={0.5} scale={scale * 0.5} {...props} />
 );
 
 const STAGE_UI_PADDING = 75;
 
-const StageControlButton = ({ ButtonSprite, scale, clickCallback, ...props }) => {
+const StageControlButton = ({ hide, scale, clickCallback, ...props }) => {
   const [alpha, setAlpha] = useState(0.75);
 
   const handleHover = useCallback(onOff => setAlpha(onOff ? 0.85 : 0.75), []);
@@ -30,11 +30,11 @@ const StageControlButton = ({ ButtonSprite, scale, clickCallback, ...props }) =>
   );
 
   return (
-    <ButtonSprite
-      buttonMode
-      interactive
+    <DownArrowSprite
+      interactive={!hide}
+      buttonMode={!hide}
       scale={scale}
-      alpha={alpha}
+      alpha={hide ? 0 : alpha}
       pointerdown={() => handleClick(true)}
       pointerup={() => handleClick(false)}
       pointerover={() => handleHover(true)}
@@ -51,8 +51,10 @@ const CWStageController = ({
   globalScale,
   stageWidth,
   stageHeight,
-  viewingBatch,
   viewpoints,
+  viewingBatch,
+  onFirstBatch,
+  onLastBatch,
   selectBatchCallback,
 }) => {
   const [startTime] = useState(new Date().getTime());
@@ -84,12 +86,17 @@ const CWStageController = ({
 
   const downClicked = useCallback(
     downUp => {
+      if (downUp) {
+        console.log('moving to lower viewpoint...');
+        if (stageYTo !== viewpoints.slice(-1)[0]) setStageYTo(viewpoints[viewingBatch + 1]);
+      } else if (stageYTo !== viewpoints[0]) setStageYTo(viewpoints[viewingBatch - 1]);
+      console.log('Down clicked?', downUp);
       selectBatchCallback(downUp);
     },
-    [selectBatchCallback]
+    [selectBatchCallback, stageYTo, viewingBatch, viewpoints]
   );
 
-  useEffect(() => setStageYTo(viewpoints[viewingBatch]), [viewingBatch, viewpoints, setStageYTo]);
+  // useEffect(() => , [viewingBatch, viewpoints, setStageYTo]);
 
   useEffect(() => {
     app.ticker.add(updatePosition);
@@ -97,26 +104,22 @@ const CWStageController = ({
   }, [app.ticker, updatePosition]);
 
   return (
-    <Container alpha={enteredProgress}>
+    <Container alpha={enteredProgress} zOrder={-1}>
       <StageControlButton
-        ButtonSprite={DownArrowSprite}
-        buttonMode
-        interactive
+        hide={onFirstBatch}
+        rotation={Math.PI}
+        scale={globalScale}
+        position={{ x: stageWidth / 2, y: yStagePos + (STAGE_UI_PADDING - buttonOscillator) * globalScale }}
+        clickCallback={() => downClicked(false)}
+      />
+      <StageControlButton
+        hide={onLastBatch}
         scale={globalScale}
         position={{
           x: stageWidth / 2,
           y: yStagePos + stageHeight + (buttonOscillator - STAGE_UI_PADDING) * globalScale,
         }}
         clickCallback={() => downClicked(true)}
-      />
-      <StageControlButton
-        ButtonSprite={DownArrowSprite}
-        rotation={Math.PI}
-        buttonMode
-        interactive
-        scale={globalScale}
-        position={{ x: stageWidth / 2, y: yStagePos + (STAGE_UI_PADDING - buttonOscillator) * globalScale }}
-        clickCallback={() => downClicked(false)}
       />
     </Container>
   );

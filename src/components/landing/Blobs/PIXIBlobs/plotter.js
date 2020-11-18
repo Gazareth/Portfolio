@@ -42,14 +42,15 @@ const TIMELINE_RADIUS = DEFAULT_RADII * 1.05;
 const getRandomColour = () => colours[Math.floor(Math.random() * colours.length)];
 
 class CWCircle {
-  constructor(x, y, radius, fill, batchNum) {
+  constructor(x, y, radius, fill, batchNum, yBeyondBatch, batchLength) {
     this.x = x;
     this.y = y;
     this.radius = radius;
     this.fill = fill;
 
-    this.enterDelay = 1500 + y * 0.75 + 0.5 * y * randnBm();
-    this.enterDuration = 450 + randnBm() * 625 - Math.min(y / 2, 500);
+    const initializeDelay = batchNum === 0 ? 1000 : 500;
+    this.enterDelay = initializeDelay + 125 + yBeyondBatch + 0.25 * yBeyondBatch * randnBm();
+    this.enterDuration = 250 + (yBeyondBatch ** 2 / batchLength) * (1 + 1 * randnBm()); // - Math.min(yBeyondBatch / 2, 500);
 
     this.batchNum = batchNum;
   }
@@ -101,8 +102,6 @@ const rotatePoint = (point, angle, center = { x: 0, y: 0 }) => {
   const ny = cos * (y - cy) - sin * (x - cx) + cy;
   return { x: nx, y: ny };
 };
-
-const NUM_TIMELINE_POINTS = 12;
 
 // Forms a stream of points along a curve
 // - Builds a grid, n x n, equally spaced points;
@@ -163,7 +162,7 @@ const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, stream
   return blobs;
 };
 
-export default (spacing, width, height, streamWidth, center, angle, batchLength) => {
+export default (spacing, width, height, streamWidth, center, angle, timelineItems, batchLength) => {
   // The grid must be a square because when it rotates it needs to have enough points
   const gridLength = width >= height ? width : height;
   const n = Math.round(gridLength / spacing);
@@ -176,9 +175,9 @@ export default (spacing, width, height, streamWidth, center, angle, batchLength)
 
   // Set up stuff for producing timeline points periodically
   let currentBreakPoint = 0;
-  const breakPoints = new Array(NUM_TIMELINE_POINTS + 1)
+  const breakPoints = new Array(timelineItems + 1)
     .fill(1)
-    .map((_, i) => ({ x: center.x, y: center.y - height * 0.5 + (i * height * 0.8) / NUM_TIMELINE_POINTS }))
+    .map((_, i) => ({ x: center.x, y: center.y - height * 0.5 + (i * height * 0.8) / timelineItems }))
     .slice(1);
   const timelinePoints = [];
   let isLeft = true; // start on the left side, alternate
@@ -189,6 +188,9 @@ export default (spacing, width, height, streamWidth, center, angle, batchLength)
   // Randomize radius
   points = points.map(point => {
     let isTimelinePoint = false;
+    const batchNum = Math.floor((point.y - (point.y % batchLength)) / batchLength);
+    const yBeyondBatch = point.y % batchLength;
+    // Do timeline point
     if (point.y > 0 && point.y < height) {
       const nextBreakPos = currentBreakPoint + 1 > breakPoints.length ? height : breakPoints[currentBreakPoint].y;
       const { juristicialPoint } = point;
@@ -203,7 +205,7 @@ export default (spacing, width, height, streamWidth, center, angle, batchLength)
         if (goToNext) {
           currentBreakPoint += 1;
           isTimelinePoint = true;
-          timelinePoints.push({ ...point, isLeft });
+          timelinePoints.push({ ...point, isLeft, batchNum, yBeyondBatch });
           isLeft = !isLeft;
         }
       }
@@ -215,9 +217,15 @@ export default (spacing, width, height, streamWidth, center, angle, batchLength)
     const xOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * width)) / n) * (1.2 - radiusFactor);
     const yOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * height)) / n) * (1.2 - radiusFactor);
 
-    const batchNum = Math.floor((point.y - (point.y % batchLength)) / batchLength);
-
-    return new CWCircle(point.x + xOffset, point.y + yOffset, radius, color, batchNum).toJson();
+    return new CWCircle(
+      point.x + xOffset,
+      point.y + yOffset,
+      radius,
+      color,
+      batchNum,
+      yBeyondBatch,
+      batchLength
+    ).toJson();
   });
 
   return { circles: points, timelinePoints };

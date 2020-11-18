@@ -40,7 +40,8 @@ const ease = BezierEasing(0.16, 1, 0.3, 1);
 
 const TimelineBox = ({
   app,
-  timelineIndex,
+  yBeyondBatch,
+  startTime,
   boxPosition,
   joinPointPosition,
   timelinePointPosition: timelinePoint,
@@ -54,8 +55,9 @@ const TimelineBox = ({
 }) => {
   const [animationProgress] = useEnterAnimation({
     ticker: app.ticker,
-    enterTime: new Date().getTime(),
-    enterDelay: 4000 + 450 * timelineIndex,
+    canEnter: !!startTime,
+    enterTime: startTime,
+    enterDelay: 3500 + yBeyondBatch,
     enterDuration: 1000,
   });
 

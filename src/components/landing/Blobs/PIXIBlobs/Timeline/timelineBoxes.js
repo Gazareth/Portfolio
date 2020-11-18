@@ -1,4 +1,5 @@
 import React from 'react';
+import pick from 'lodash/pick';
 import TimelineBox from './TimelineBox';
 
 import CoffeeCup from './Images/CoffeeCup.png';
@@ -82,7 +83,7 @@ export const timelineInfo = [
   },
   {
     imgSrc: ComputerFuture,
-    imgHeight: 152,
+    imgHeight: 194,
     dateText: 'May 2020',
     timelineText: 'Launched Chetwood built bleeding-edge decisioning capability',
   },
@@ -103,44 +104,42 @@ export const timelineInfo = [
 // Make a point
 const p = (x, y) => ({ x, y });
 
-const TimelineBoxes = ({ timelinePointsInfo, stageWidth, stageHeight }) => {
-  const stuff = 0;
-  return (
-    <>
-      {timelinePointsInfo.map((pointInfo, i) => {
-        if (!timelineInfo[i]) return null;
-        const info = { ...pointInfo, ...timelineInfo[i] };
-        const boxHeight = info.imgHeight;
-        const BOX_POINT_OFFSET_X = info.isLeft ? BOX_POINT_OFFSET_X_LEFT : BOX_POINT_OFFSET_X_RIGHT;
+const TimelineBoxes = ({ timelinePointsInfo, startTimes }) => (
+  <>
+    {timelinePointsInfo.map((pointInfo, i) => {
+      if (!timelineInfo[i]) return null;
+      const info = { ...pointInfo, ...timelineInfo[i] };
+      const boxHeight = info.imgHeight;
+      const BOX_POINT_OFFSET_X = info.isLeft ? BOX_POINT_OFFSET_X_LEFT : BOX_POINT_OFFSET_X_RIGHT;
 
-        // "BOTTOM POINT" - Where the line from the timeline point joins the box
-        const bottomPointX = info.x + (info.isLeft ? -1 : 1) * (BOX_WIDTH + BOX_POINT_OFFSET_X - BOX_JOIN_OFFSET);
-        const bottomPointY = info.y - BOX_POINT_OFFSET_Y;
+      // "BOTTOM POINT" - Where the line from the timeline point joins the box
+      const bottomPointX = info.x + (info.isLeft ? -1 : 1) * (BOX_WIDTH + BOX_POINT_OFFSET_X - BOX_JOIN_OFFSET);
+      const bottomPointY = info.y - BOX_POINT_OFFSET_Y;
 
-        const boxPosX = bottomPointX + (info.isLeft ? -BOX_JOIN_OFFSET : -BOX_WIDTH + BOX_JOIN_OFFSET);
-        const boxPosY = bottomPointY - boxHeight;
+      const boxPosX = bottomPointX + (info.isLeft ? -BOX_JOIN_OFFSET : -BOX_WIDTH + BOX_JOIN_OFFSET);
+      const boxPosY = bottomPointY - boxHeight;
 
-        const offsetTimelinePosition = p(info.x + TIMELINE_POINT_OFFSET * (info.isLeft ? -1 : 1), info.y);
+      const offsetTimelinePosition = p(info.x + TIMELINE_POINT_OFFSET * (info.isLeft ? -1 : 1), info.y);
 
-        return (
-          <TimelineBox
-            key={info.dateText}
-            timelineIndex={i}
-            boxPosition={p(boxPosX, boxPosY)}
-            joinPointPosition={p(bottomPointX, bottomPointY)}
-            timelinePointPosition={offsetTimelinePosition}
-            boxWidth={BOX_WIDTH}
-            boxHeight={boxHeight}
-            dateText={info.dateText}
-            image={info.imgSrc}
-            textWidth={BOX_WIDTH - IMAGE_WIDTH}
-            imageWidth={IMAGE_WIDTH}
-            text={info.timelineText}
-          />
-        );
-      })}
-    </>
-  );
-};
+      return (
+        <TimelineBox
+          key={info.dateText}
+          startTime={startTimes[info.batchNum]}
+          yBeyondBatch={info.yBeyondBatch}
+          boxPosition={p(boxPosX, boxPosY)}
+          joinPointPosition={p(bottomPointX, bottomPointY)}
+          timelinePointPosition={offsetTimelinePosition}
+          boxWidth={BOX_WIDTH}
+          boxHeight={boxHeight}
+          dateText={info.dateText}
+          image={info.imgSrc}
+          textWidth={BOX_WIDTH - IMAGE_WIDTH}
+          imageWidth={IMAGE_WIDTH}
+          text={info.timelineText}
+        />
+      );
+    })}
+  </>
+);
 
 export default TimelineBoxes;

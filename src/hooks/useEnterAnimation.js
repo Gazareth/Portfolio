@@ -31,8 +31,6 @@ const useEnterAnimation = ({
     if (!hasEntered && enterTime > 0) {
       ticker.add(updateAnimation);
       if (debug) console.log('Starting ticker!', hasEntered);
-    } else {
-      console.log('Anim fail!', hasEntered, enterTime);
     }
   }, [debug, enterTime, hasEntered, ticker, updateAnimation]);
 
