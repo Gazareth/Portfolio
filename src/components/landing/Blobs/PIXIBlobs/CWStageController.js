@@ -46,31 +46,50 @@ const StageControlButton = ({ ButtonSprite, scale, clickCallback, ...props }) =>
 
 const oscillator = () => 5 * Math.sin(new Date().getTime() / 180);
 
-const CWStageController = ({ app, globalScale, stageWidth, stageHeight }) => {
-  const [stageYTo, setStageYTo] = useState(app.stage.position.y);
+const CWStageController = ({
+  app,
+  globalScale,
+  stageWidth,
+  stageHeight,
+  viewingBatch,
+  viewpoints,
+  selectBatchCallback,
+}) => {
+  const [startTime] = useState(new Date().getTime());
+  const [stageYTo, setStageYTo] = useState(viewpoints[viewingBatch]);
   const [yStagePos, setYStagePos] = useState(stageHeight / 2);
   const [buttonOscillator, setOscillator] = useState(oscillator());
 
+  // console.log('Stage pos:', app.stage.position.y, 'to:', stageYTo);
+  // console.log('Is pixi renderer?', app.renderer, app.renderer instanceof PIXI.Renderer);
+
+  // This allows us to scroll the page up and down even when the mouse is inside the PIXI canvas... neat!!! (https://stackoverflow.com/questions/37527524/pixi-disabled-preventdefault-touch-events-not-working-on-android-devices)
+  app.renderer.plugins.interaction.autoPreventDefault = true;
+
   const [enteredProgress] = useEnterAnimation({
     ticker: app.ticker,
-    enterTime: new Date().getTime(),
+    enterTime: startTime,
     enterDelay: 7000,
     enterDuration: 1500,
   });
 
   const updatePosition = useCallback(() => {
     setOscillator(oscillator());
-    // Oscillate to indicate clickable
+    // Oscillate buttons to indicate clickable
     setYStagePos(-app.stage.position.y);
 
     // Move stage closer to where it should be (animate)
     app.stage.position.y += (stageYTo - app.stage.position.y) / 10;
   }, [app.stage.position.y, stageYTo]);
 
-  const downClicked = useCallback(downUp => setStageYTo(app.stage.position.y + stageHeight * 0.5 * (downUp ? -1 : 1)), [
-    app.stage.position.y,
-    stageHeight,
-  ]);
+  const downClicked = useCallback(
+    downUp => {
+      selectBatchCallback(downUp);
+    },
+    [selectBatchCallback]
+  );
+
+  useEffect(() => setStageYTo(viewpoints[viewingBatch]), [viewingBatch, viewpoints, setStageYTo]);
 
   useEffect(() => {
     app.ticker.add(updatePosition);

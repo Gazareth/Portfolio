@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 
 import { Stage, Container } from 'react-pixi-fiber';
+import { Global } from 'components/common/Layout/styles';
 import CirclesController from './Circle';
 import Rectangle from './Rectangle';
 import timelineBoxes, { timelineInfo } from './Timeline/timelineBoxes';
@@ -41,9 +42,16 @@ const STAGE_OPTIONS = {
   // resolution: 2,
 };
 
-const BLOBSTREAM_WIDTH = Math.min(Math.max(APP_DIMENSIONS.width * 0.35, 350), 500);
+const BLOBSTREAM_WIDTH = Math.min(Math.max(APP_DIMENSIONS.width * 0.2, 350), 500);
 const BLOBSTREAM_HEIGHT = APP_DIMENSIONS.height * 0.9;
 
+const BLOB_BATCH_LENGTH = (STAGE_DIMENSIONS.height * 0.65) / GlobalScale;
+const BLOB_BATCHES = Math.ceil(APP_DIMENSIONS.height / BLOB_BATCH_LENGTH);
+const BATCH_VIEWPOINTS = new Array(BLOB_BATCHES).fill(0, 0, BLOB_BATCHES).map((_, i) => i * -BLOB_BATCH_LENGTH);
+
+console.log(`${BLOB_BATCHES} blob batches of length ${BLOB_BATCH_LENGTH}! Viewpoints: ${BATCH_VIEWPOINTS}`);
+
+// May need this because firefox doesn't antialias unless there's a rectangle behind
 const BG_PROPS = {
   ...APP_DIMENSIONS,
   fill: 0x202020,
@@ -54,7 +62,7 @@ const BLOBS_LOCAL_STORAGE_KEY = 'cw-blobs-data';
 
 const blobPointInfo = CACHED
   ? JSON.parse(window.localStorage.getItem(BLOBS_LOCAL_STORAGE_KEY))
-  : plotter(50, APP_DIMENSIONS.width, APP_DIMENSIONS.height, BLOBSTREAM_WIDTH, APP_CENTER, 45);
+  : plotter(50, APP_DIMENSIONS.width, APP_DIMENSIONS.height, BLOBSTREAM_WIDTH, APP_CENTER, 45, BLOB_BATCH_LENGTH);
 
 // console.log('BlobsCached', blobPointInfo, blobPointInfo.circles);
 // console.log('Blobs Plotted', plotter(50, BLOBSTREAM_WIDTH, BLOBSTREAM_HEIGHT, APP_CENTER, 45));
@@ -63,36 +71,53 @@ if (!CACHED) {
   window.localStorage.setItem(BLOBS_LOCAL_STORAGE_KEY, JSON.stringify(blobPointInfo));
 }
 
-// const blobs = plotter(15, 15, STAGE_OPTIONS.width * 0.7, STAGE_OPTIONS.height * 0.7, 45, APP_CENTER);
-// const blobs = plotter(12, 2, STAGE_OPTIONS.width * 0.85, STAGE_OPTIONS.height * 0.65, 0, APP_CENTER);
+const Blobs = () => {
+  const [startTimes, setStartTimes] = useState([new Date().getTime()]);
+  const [viewingBatch, setViewing] = useState(0);
 
-// const app = new PIXI.Application(STAGE_OPTIONS);
+  const nextBatch = useCallback(
+    upDown => {
+      if (upDown) {
+        if (viewingBatch > 0) {
+          setViewing(viewingBatch - 1);
+        } else if (startTimes.length <= BLOB_BATCHES && viewingBatch < startTimes.length) {
+          setStartTimes([...startTimes, new Date().getTime()]);
+          setViewing(viewingBatch + 1);
+        }
+      }
+    },
+    [startTimes, viewingBatch]
+  );
 
-const Blobs = () => (
-  // <Stage app={app}>
-  <Stage options={STAGE_OPTIONS}>
-    <Container
-      scale={GlobalScale}
-      pivot={{ x: APP_DIMENSIONS.width / 2, y: APP_DIMENSIONS.height / 2 }}
-      position={{
-        x: APP_DIMENSIONS.width * 0.5, // * GlobalScale,
-        y: APP_DIMENSIONS.height * 0.5 - APP_DIMENSIONS.height * 0.5 * (1 - GlobalScale),
-      }}
-    >
-      {/* <Rectangle {...BG_PROPS} /> */}
-      <CirclesController circles={blobPointInfo.circles} />
-      {timelineBoxes({
-        stageWidth: STAGE_DIMENSIONS.width,
-        stageHeight: STAGE_DIMENSIONS.height,
-        timelinePointsInfo: blobPointInfo.timelinePoints,
-      })}
-    </Container>
-    <CWStageController
-      globalScale={GlobalScale}
-      stageWidth={STAGE_DIMENSIONS.width}
-      stageHeight={STAGE_DIMENSIONS.height}
-    />
-  </Stage>
-);
+  return (
+    // <Stage app={app}>
+    <Stage options={STAGE_OPTIONS}>
+      <Container
+        scale={GlobalScale}
+        pivot={{ x: APP_DIMENSIONS.width / 2, y: APP_DIMENSIONS.height / 2 }}
+        position={{
+          x: APP_DIMENSIONS.width * 0.5, // * GlobalScale,
+          y: GlobalScale * (APP_DIMENSIONS.height * 0.5 + 200),
+        }}
+      >
+        {/* <Rectangle {...BG_PROPS} /> */}
+        <CirclesController circles={blobPointInfo.circles} startTimes={startTimes} />
+        {timelineBoxes({
+          stageWidth: STAGE_DIMENSIONS.width,
+          stageHeight: STAGE_DIMENSIONS.height,
+          timelinePointsInfo: blobPointInfo.timelinePoints,
+        })}
+      </Container>
+      <CWStageController
+        globalScale={GlobalScale}
+        stageWidth={STAGE_DIMENSIONS.width}
+        stageHeight={STAGE_DIMENSIONS.height}
+        viewpoints={BATCH_VIEWPOINTS}
+        viewingBatch={viewingBatch}
+        selectBatchCallback={nextBatch}
+      />
+    </Stage>
+  );
+};
 
 export default Blobs;

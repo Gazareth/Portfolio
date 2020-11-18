@@ -42,7 +42,7 @@ const TIMELINE_RADIUS = DEFAULT_RADII * 1.05;
 const getRandomColour = () => colours[Math.floor(Math.random() * colours.length)];
 
 class CWCircle {
-  constructor(x, y, radius, fill, enterDuration) {
+  constructor(x, y, radius, fill, batchNum) {
     this.x = x;
     this.y = y;
     this.radius = radius;
@@ -50,10 +50,12 @@ class CWCircle {
 
     this.enterDelay = 1500 + y * 0.75 + 0.5 * y * randnBm();
     this.enterDuration = 450 + randnBm() * 625 - Math.min(y / 2, 500);
+
+    this.batchNum = batchNum;
   }
 
   toJson() {
-    return pick(this, ['x', 'y', 'radius', 'fill', 'enterDelay', 'enterDuration']);
+    return pick(this, ['x', 'y', 'radius', 'fill', 'enterDelay', 'enterDuration', 'batchNum']);
   }
 }
 
@@ -124,8 +126,6 @@ const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, stream
     const offsetFactor = -(Math.cos(curveAngle) ** 2) + Math.sin(curveAngle); // Curve !!!
     const xOffset = -xMax * 0.3 * offsetFactor;
     return {
-      outlierFactor: 0,
-      juristicialPoint: { x: center.x + xOffset, y },
       x: center.x + xOffset,
       y,
     };
@@ -160,18 +160,16 @@ const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, stream
   });
 
   // return streamCurve.map(streamPoint => ({ ...streamPoint, juristicialPoint: { x: 0, y: 0 }, outlierFactor: 0 }));
-  return streamCurve;
+  return blobs;
 };
 
-export default (spacing, width, height, streamWidth, center, angle) => {
+export default (spacing, width, height, streamWidth, center, angle, batchLength) => {
   // The grid must be a square because when it rotates it needs to have enough points
   const gridLength = width >= height ? width : height;
   const n = Math.round(gridLength / spacing);
 
   const streamRes = 24; // how many points make up 'main stream' line -- "resolution"
   const streamJuristiction = height / streamRes; // distance (y-axis) within which a grid point is classed as 'belonging to' a stream point
-
-  console.log(`Generating ${n}x${n} points!`);
 
   // const streamWidth = width * 0.35;
   let points = makeCWGrid(n, gridLength, center, angle, streamWidth, streamRes, streamJuristiction);
@@ -217,7 +215,9 @@ export default (spacing, width, height, streamWidth, center, angle) => {
     const xOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * width)) / n) * (1.2 - radiusFactor);
     const yOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * height)) / n) * (1.2 - radiusFactor);
 
-    return new CWCircle(point.x + xOffset, point.y + yOffset, radius, color).toJson();
+    const batchNum = Math.floor((point.y - (point.y % batchLength)) / batchLength);
+
+    return new CWCircle(point.x + xOffset, point.y + yOffset, radius, color, batchNum).toJson();
   });
 
   return { circles: points, timelinePoints };

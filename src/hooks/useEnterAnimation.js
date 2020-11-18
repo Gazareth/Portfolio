@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const useEnterAnimation = ({ ticker, enterTime, enterDelay = 0, enterDuration = 750, debug = false }) => {
+const useEnterAnimation = ({
+  ticker,
+  canEnter = true,
+  enterTime,
+  enterDelay = 0,
+  enterDuration = 750,
+  debug = false,
+}) => {
   const [hasEntered, setHasEntered] = useState(false);
   const [enteredProgress, setEnteredProg] = useState(0.0);
 
@@ -15,18 +22,24 @@ const useEnterAnimation = ({ ticker, enterTime, enterDelay = 0, enterDuration = 
       } else {
         if (debug) console.log('hasEntered!', lifeFactor);
         setHasEntered(true);
+        ticker.remove(updateAnimation);
       }
     }
-  }, [debug, enterDelay, enterDuration, enterTime, hasEntered]);
+  }, [debug, enterDelay, enterDuration, enterTime, hasEntered, ticker]);
 
-  useEffect(() => {
-    if (!hasEntered) {
+  const startTicker = useCallback(() => {
+    if (!hasEntered && enterTime > 0) {
       ticker.add(updateAnimation);
       if (debug) console.log('Starting ticker!', hasEntered);
+    } else {
+      console.log('Anim fail!', hasEntered, enterTime);
     }
-    return () => ticker.remove(updateAnimation);
+  }, [debug, enterTime, hasEntered, ticker, updateAnimation]);
+
+  useEffect(() => {
+    startTicker();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [canEnter]);
 
   return [enteredProgress, hasEntered];
 };

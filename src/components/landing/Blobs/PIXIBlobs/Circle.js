@@ -10,30 +10,25 @@ import CircleImg from './circle-64.ico';
 // const ease = BezierEasing(0.35, 1.76, 0.53, 1.01);
 const ease = BezierEasing(0.07, 1.8, 0.79, 0.91);
 
-const Circle = ({ app, CircleSprite, startTime, enterDelay, enterDuration = 1000, x, y, radius, ...rest }) => {
+const Circle = ({ app, x, y, radius, CircleSprite, startTime, enterDelay, enterDuration = 1000, ...rest }) => {
   const [enteredProgress] = useEnterAnimation({
     ticker: app.ticker,
+    canEnter: !!startTime,
     enterTime: startTime,
     enterDelay,
     enterDuration,
   });
-
   return <CircleSprite x={x} y={y} scale={(ease(enteredProgress) * radius) / 32} tint={rest.fill} />;
   // return <CircleSprite x={x} y={y} scale={radius / 32} tint={rest.fill} />;
 };
 
-const CirclesController = ({ app, circles }) => {
-  const [startTime] = useState(new Date().getTime());
-  // This allows us to scroll the page up and down even when the mouse is inside the PIXI canvas... neat!!! (https://stackoverflow.com/questions/37527524/pixi-disabled-preventdefault-touch-events-not-working-on-android-devices)
-  app.renderer.plugins.interaction.autoPreventDefault = true;
+const CirclesController = ({ app, circles, startTimes }) => {
   const CircleSprite = props => <Sprite texture={PIXI.Texture.from(CircleImg)} {...props} anchor={0.5} />;
-
-  console.log('Is pixi renderer?', app.renderer, app.renderer instanceof PIXI.Renderer);
 
   return (
     <>
       {circles.map((blob, i) => (
-        <Circle key={i} app={app} startTime={startTime} CircleSprite={CircleSprite} {...blob} />
+        <Circle key={i} app={app} startTime={startTimes[blob.batchNum]} CircleSprite={CircleSprite} {...blob} />
       ))}
     </>
   );
