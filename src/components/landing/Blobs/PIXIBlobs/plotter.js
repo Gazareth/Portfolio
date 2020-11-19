@@ -49,8 +49,8 @@ class CWCircle {
     this.fill = fill;
 
     const initializeDelay = batchNum === 0 ? 1000 : 500;
-    this.enterDelay = initializeDelay + 125 + yBeyondBatch + 0.25 * yBeyondBatch * randnBm();
-    this.enterDuration = (250 + (750 * yBeyondBatch) / batchLength) * (1 + randnBm()); // - Math.min(yBeyondBatch / 2, 500);
+    this.enterDelay = initializeDelay + 125 + yBeyondBatch * 0.65 + 0.15 * yBeyondBatch * randnBm();
+    this.enterDuration = (900 + (yBeyondBatch * 1200) / batchLength) * (1 + randnBm()); // - Math.min(yBeyondBatch / 2, 500);
 
     this.batchNum = batchNum;
   }

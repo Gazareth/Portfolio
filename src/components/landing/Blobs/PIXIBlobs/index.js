@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 
-import { Stage, Container } from 'react-pixi-fiber';
+import { Stage, ParticleContainer, Container } from 'react-pixi-fiber';
 import { Global } from 'components/common/Layout/styles';
 import CirclesController from './Circle';
 import Rectangle from './Rectangle';
@@ -55,7 +55,7 @@ const APP_CENTER = {
 };
 
 const APP_COMPACT_CENTER = {
-  x: 0,
+  x: 0 - APP_DIMENSIONS.width * 0.1,
   y: APP_DIMENSIONS.height * 0.5,
 };
 
@@ -106,7 +106,16 @@ if (!CACHED) {
   window.localStorage.setItem(BLOBS_LOCAL_STORAGE_KEY, JSON.stringify(blobPointInfo));
 }
 
+const particleContainerProperties = {
+  scale: true,
+  position: false,
+  rotation: false,
+  uvs: false,
+  tint: false,
+};
+
 const Blobs = () => {
+  const particleContainer = useRef(null);
   const [startTimes, setStartTimes] = useState([new Date().getTime()]);
   const [viewingBatch, setViewing] = useState(0);
 
@@ -115,6 +124,12 @@ const Blobs = () => {
       if (downUp) {
         if (viewingBatch < BLOB_BATCHES - 1) {
           setViewing(viewing => viewing + 1);
+          const stageDiv = document.getElementById('stageDiv');
+          stageDiv.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center',
+          });
           console.log('Increase viewing batch!', viewingBatch + 1);
           if (viewingBatch === startTimes.length - 1) {
             setStartTimes([...startTimes, new Date().getTime()]);
@@ -130,7 +145,25 @@ const Blobs = () => {
 
   return (
     // <Stage app={app}>
-    <Stage options={STAGE_OPTIONS}>
+    <Stage options={STAGE_OPTIONS} id="stageDiv">
+      <ParticleContainer
+        ref={particleContainer}
+        scale={GlobalScale}
+        pivot={{ x: APP_DIMENSIONS.width / 2, y: APP_DIMENSIONS.height / 2 }}
+        position={{
+          x: APP_DIMENSIONS.width * 0.5, // * GlobalScale,
+          y: GlobalScale * (APP_DIMENSIONS.height * 0.5 + 250),
+        }}
+        maxSize={20000}
+        properties={particleContainerProperties}
+      >
+        {/* <Rectangle {...BG_PROPS} /> */}
+        <CirclesController
+          circles={blobPointInfo.circles}
+          startTimes={startTimes}
+          particleContainer={particleContainer}
+        />
+      </ParticleContainer>
       <Container
         scale={GlobalScale}
         pivot={{ x: APP_DIMENSIONS.width / 2, y: APP_DIMENSIONS.height / 2 }}
@@ -139,8 +172,6 @@ const Blobs = () => {
           y: GlobalScale * (APP_DIMENSIONS.height * 0.5 + 250),
         }}
       >
-        {/* <Rectangle {...BG_PROPS} /> */}
-        <CirclesController circles={blobPointInfo.circles} startTimes={startTimes} />
         {timelineBoxes({
           stageWidth: STAGE_DIMENSIONS.width,
           stageHeight: STAGE_DIMENSIONS.height,
