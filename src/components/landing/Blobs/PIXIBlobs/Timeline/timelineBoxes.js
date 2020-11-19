@@ -104,7 +104,7 @@ export const timelineInfo = [
 // Make a point
 const p = (x, y) => ({ x, y });
 
-const TimelineBoxes = ({ timelinePointsInfo, startTimes }) => (
+const TimelineBoxes = ({ timelinePointsInfo, startTimes, compactMode }) => (
   <>
     {timelinePointsInfo.map((pointInfo, i) => {
       if (!timelineInfo[i]) return null;
@@ -121,12 +121,14 @@ const TimelineBoxes = ({ timelinePointsInfo, startTimes }) => (
 
       const offsetTimelinePosition = p(info.x + TIMELINE_POINT_OFFSET * (info.isLeft ? -1 : 1), info.y);
 
+      const compactPosition = p(info.x - BOX_WIDTH * 0.5, info.y - boxHeight * 0.5);
+
       return (
         <TimelineBox
           key={info.dateText}
           startTime={startTimes[info.batchNum]}
           yBeyondBatch={info.yBeyondBatch}
-          boxPosition={p(boxPosX, boxPosY)}
+          boxPosition={compactMode ? compactPosition : p(boxPosX, boxPosY)}
           joinPointPosition={p(bottomPointX, bottomPointY)}
           timelinePointPosition={offsetTimelinePosition}
           boxWidth={BOX_WIDTH}
@@ -136,6 +138,7 @@ const TimelineBoxes = ({ timelinePointsInfo, startTimes }) => (
           textWidth={BOX_WIDTH - IMAGE_WIDTH}
           imageWidth={IMAGE_WIDTH}
           text={info.timelineText}
+          compactMode={compactMode}
         />
       );
     })}

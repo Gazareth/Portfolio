@@ -52,6 +52,7 @@ const TimelineBox = ({
   image,
   imageWidth,
   text,
+  compactMode,
 }) => {
   const [animationProgress] = useEnterAnimation({
     ticker: app.ticker,
@@ -91,7 +92,7 @@ const TimelineBox = ({
           text={text}
         />
       </Container>
-      {/* <Container cacheAsBitmap>
+      {/*! compactMode &&  <Container cacheAsBitmap>
         <DottedLine startPoint={timelinePoint} endPoint={cornerPoint} dash={6} color={0x646464} />
         <DottedLine startPoint={cornerPoint} endPoint={joinPointPosition} dash={6} color={0x646464} />
       </Container> */}

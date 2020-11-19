@@ -49,8 +49,10 @@ class CWCircle {
     this.fill = fill;
 
     const initializeDelay = batchNum === 0 ? 1000 : 500;
-    this.enterDelay = initializeDelay + 125 + yBeyondBatch * 0.65 + 0.15 * yBeyondBatch * randnBm();
-    this.enterDuration = (900 + (yBeyondBatch * 1200) / batchLength) * (1 + randnBm()); // - Math.min(yBeyondBatch / 2, 500);
+    // this.enterDelay = initializeDelay + 125 + yBeyondBatch * 0.65 + 0.15 * yBeyondBatch * randnBm();
+    this.enterDelay =
+      initializeDelay + 125 + (yBeyondBatch ** 2 / batchLength) * (1.4 + 0.1 * randnBm()) * (0.75 + 0.1 * randnBm());
+    this.enterDuration = 1200 + ((yBeyondBatch * 1.5) / batchLength) * (0.05 + 0.05 * randnBm()); // - Math.min(yBeyondBatch / 2, 500);
 
     this.batchNum = batchNum;
   }
@@ -116,13 +118,13 @@ const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, stream
 
   // ROTATE by specified angle
   blobs = blobs.map(point => rotatePoint(point, angle, center));
-
+  console.log('JURISTICTION: ', streamJuristiction);
   // Plot 'main stream' curve
   const xMax = compactMode ? streamWidth * 0.5 : streamWidth; // distance (x-axis) outside of which a circle is invariably discarded
   const streamCurve = new Array(streamRes).fill(1).map((_, i) => {
     const y = center.y - gridLength * 0.48 + (i * gridLength * 0.9) / (streamRes - 1);
-    const curveAngle = (y * 8) / (gridLength * 0.8); // this is the 'angle' used by the sin/cos functions, not visual angle
-    const offsetFactor = -(Math.cos(curveAngle) ** 2) + Math.sin(curveAngle); // Curve !!!
+    const curveAngle = (y * 16) / (gridLength * 0.8); // this is the 'angle' used by the sin/cos functions, not visual angle
+    const offsetFactor = -(-(Math.cos(curveAngle) ** 2) + Math.sin(curveAngle));
     const xOffset = -(compactMode ? streamWidth * 0.25 : xMax) * 0.3 * offsetFactor;
     return {
       x: center.x + xOffset,
@@ -167,7 +169,7 @@ export default (spacing, width, height, streamWidth, center, angle, timelineItem
   const gridLength = width >= height ? width : height;
   const n = Math.round(gridLength / spacing);
 
-  const streamRes = 24; // how many points make up 'main stream' line -- "resolution"
+  const streamRes = Math.round((height * 10) / batchLength); // how many points make up 'main stream' line -- "resolution"
   const streamJuristiction = height / streamRes; // distance (y-axis) within which a grid point is classed as 'belonging to' a stream point
 
   // const streamWidth = width * 0.35;
@@ -198,21 +200,33 @@ export default (spacing, width, height, streamWidth, center, angle, timelineItem
 
       if (point.y > nextBreakPos) {
         let goToNext = true;
-        if (compactMode || !isLeft) {
+        if (compactMode) {
+          goToNext = true;
+        } else if (!isLeft) {
           goToNext = compactMode || point.x > juristicialPoint.x + streamWidth * 0.05;
         } else {
           goToNext = point.x < juristicialPoint.x - streamWidth * 0.05;
         }
         if (goToNext) {
           currentBreakPoint += 1;
-          isTimelinePoint = true;
-          timelinePoints.push({ ...point, isLeft: !compactMode && isLeft, batchNum, yBeyondBatch });
-          isLeft = !isLeft;
+          if (compactMode) {
+            timelinePoints.push({
+              x: center.x,
+              y: nextBreakPos - breakPointDiff * 0.25,
+              isLeft: false,
+              batchNum,
+              yBeyondBatch,
+            });
+          } else {
+            isTimelinePoint = true; // only make timeline points visible if not in compact mode!
+            timelinePoints.push({ ...point, isLeft, batchNum, yBeyondBatch });
+            isLeft = !isLeft;
+          }
         }
       }
     }
     const color = isTimelinePoint ? CHETWOOD_MAIN : getRandomColour();
-    const radiusFactor = (randnBm() * 0.9 + 0.1) ** 1.56 * (1.85 - 1.45 * point.outlierFactor ** 1.5);
+    const radiusFactor = Math.min((randnBm() * 0.9 + 0.1) ** 1.56 * (1.85 - 1.45 * point.outlierFactor ** 1.5), 1);
 
     const radius = isTimelinePoint ? TIMELINE_RADIUS : DEFAULT_RADII * radiusFactor;
     const xOffset = isTimelinePoint ? 0 : ((randnBmZero() * (0.65 * width)) / n) * (1.2 - radiusFactor);
