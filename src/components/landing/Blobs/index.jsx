@@ -1,60 +1,44 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, { Suspense } from 'react';
+import useClient from '../../../hooks/useClient';
 
-import { Stage, Container } from 'react-pixi-fiber';
-import Circle from './Circle';
-import Rectangle from './Rectangle';
-import TimelineBox from './TimelineBox';
-import plotter from './plotter';
-import { Wrapper, SkillsWrapper } from './styles';
+import { BlobsWrapper } from './styles';
 
-const STAGE_DIMENSIONS = {
-  width: window.innerWidth * 0.8,
-  height: 1500,
-};
+// import PIXIBlobs from './PIXIBlobs';
+const PIXIBlobs = typeof window !== `undefined` ? React.lazy(() => import('./PIXIBlobs')) : null;
 
-const STAGE_CENTER = {
-  x: STAGE_DIMENSIONS.width * 0.5,
-  y: STAGE_DIMENSIONS.height * 0.5,
-};
-
-const STAGE_OPTIONS = {
-  backgroundColor: 0x111111,
-  width: STAGE_DIMENSIONS.width,
-  height: STAGE_DIMENSIONS.height,
-  antialias: true,
-  // forceFXAA: true,
-  // resolution: 2,
-};
-
-const BG_PROPS = {
-  ...STAGE_DIMENSIONS,
-  fill: 0x202020,
-};
-
-// const blobs = plotter(
-//   30,
-//   STAGE_OPTIONS.width * 0.5,
-//   STAGE_OPTIONS.height * 0.15,
-//   STAGE_OPTIONS.width * 0.5,
-//   STAGE_OPTIONS.height * 0.75
-// );
-
-const blobPointInfo = plotter(25, 25, 1250, 1250, 45, STAGE_CENTER);
-// const blobs = plotter(15, 15, STAGE_OPTIONS.width * 0.7, STAGE_OPTIONS.height * 0.7, 45, STAGE_CENTER);
-// const blobs = plotter(12, 2, STAGE_OPTIONS.width * 0.85, STAGE_OPTIONS.height * 0.65, 0, STAGE_CENTER);
-
-export const Blobs = () => (
-  <Wrapper id="blobs">
-    <SkillsWrapper>
-      <Stage options={STAGE_OPTIONS}>
-        <Container>
-          <Rectangle {...BG_PROPS} />
-          {blobPointInfo.circles.map((blob, i) => (
-            <Circle key={i} {...blob} />
-          ))}
-          <TimelineBox x={50} y={150} timelinePoints={blobPointInfo.timelinePoints} />
-        </Container>
-      </Stage>
-    </SkillsWrapper>
-  </Wrapper>
+const Fallback = () => (
+  <div
+    id="loadingDiv"
+    style={{
+      width: '40vw',
+      height: '60vh',
+      // /backgroundColor: '#aaa',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    }}
+  >
+    <p style={{ fontSize: '32px', color: '#888' }}>Loading...</p>
+  </div>
 );
+
+export const Blobs = () => {
+  const [key, client] = useClient();
+
+  // What to render for the server
+  if (!client)
+    return (
+      <noscript>
+        <div>You must have javascript enabled to view this app.</div>
+      </noscript>
+    );
+
+  return (
+    // What to render for the client - you need the key to force a remount
+    <BlobsWrapper key={key} id="blobs">
+      <Suspense fallback={<Fallback />}>
+        <PIXIBlobs />
+      </Suspense>
+    </BlobsWrapper>
+  );
+};
