@@ -76,7 +76,11 @@ const TimelineBox = ({
 
   return (
     <>
-      <Container position={{ x: 0, y: 0 + boxWidth * 0.35 * (1 - transformProgress) }} alpha={animationProgress}>
+      <Container
+        position={{ x: 0, y: 0 + boxWidth * 0.35 * (1 - transformProgress) }}
+        alpha={animationProgress}
+        zOrder={-1}
+      >
         <RoundedRectangle x={x} y={y} width={boxWidth} height={boxHeight} fill={0x141414} radius={10} />
         <ImageSprite x={x} y={y} height={boxHeight} />
         <Text x={TEXT_START_X} y={TEXT_START_Y} style={dateStyle} text={dateText} />

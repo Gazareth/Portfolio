@@ -104,7 +104,7 @@ const CWStageController = ({
   }, [app.ticker, updatePosition]);
 
   return (
-    <Container alpha={enteredProgress} zOrder={-1}>
+    <Container alpha={enteredProgress} zOrder={-2}>
       <StageControlButton
         hide={onFirstBatch}
         rotation={Math.PI}

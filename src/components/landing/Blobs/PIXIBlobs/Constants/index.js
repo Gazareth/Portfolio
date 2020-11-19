@@ -27,9 +27,10 @@ export const getBreakPoint = width => {
   return ScreenModes[ScreenModeIndex];
 };
 
-const BlobAlign = {
+export const BlobAlign = {
   CENTERED: 'center',
   LEFT: 'left',
+  COMPACT: 'compact',
 };
 
 const BASE_VALUES = {
@@ -46,6 +47,7 @@ const ResponsiveValues = windowWidth => ({
   [ModeValues.EXTRA_SMALL]: {
     ...BASE_VALUES,
     stageWidthFn: windowWidth => windowWidth,
+    blobAlign: BlobAlign.COMPACT,
     blobRadius: BASE_VALUES.blobRadius * 0.5,
     blobSpread: windowWidth * 0.5,
     showTimelineBlobJoin: false,

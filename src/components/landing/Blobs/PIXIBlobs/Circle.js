@@ -5,7 +5,7 @@ import BezierEasing from 'bezier-easing';
 
 import useEnterAnimation from '../../../../hooks/useEnterAnimation';
 
-import CircleImg from './circle-64.ico';
+import CircleImg from './circle-32.png';
 
 // const ease = BezierEasing(0.35, 1.76, 0.53, 1.01);
 const ease = BezierEasing(0.07, 1.8, 0.79, 0.91);
@@ -18,7 +18,7 @@ const Circle = ({ app, x, y, radius, CircleSprite, startTime, enterDelay, enterD
     enterDelay,
     enterDuration,
   });
-  return <CircleSprite x={x} y={y} scale={(ease(enteredProgress) * radius) / 32} tint={rest.fill} />;
+  return <CircleSprite x={x} y={y} scale={(ease(enteredProgress) * radius) / 16} tint={rest.fill} />;
   // return <CircleSprite x={x} y={y} scale={radius / 32} tint={rest.fill} />;
 };
 

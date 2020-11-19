@@ -8,9 +8,13 @@ import timelineBoxes, { timelineInfo } from './Timeline/timelineBoxes';
 import CWStageController from './CWStageController';
 import plotter from './plotter';
 
-import { getBreakPoint, getResponsiveValue } from './Constants';
+import { getBreakPoint, getResponsiveValue, BlobAlign } from './Constants';
 
 const ScreenSizeMode = getBreakPoint(window.innerWidth);
+const blobAlign = getResponsiveValue(window.innerWidth, ScreenSizeMode, 'blobAlign');
+
+const compactMode = blobAlign === BlobAlign.COMPACT;
+
 const GlobalScale = 0.4 + 0.6 * Math.min(window.innerWidth / 2560, 1); // getResponsiveValue(window.innerWidth, ScreenSizeMode, 'globalScale');
 console.log('Got global scale!', GlobalScale);
 
@@ -27,16 +31,16 @@ const TIMELINE_GAP =
   TIMELINE_GAP_MIN + (BLOB_BATCH_LENGTH_MIN * (1 + BLOB_BATCHES_MIN - BLOB_BATCHES_PRECISE)) / TIMELINE_ITEMS;
 
 const TIMELINE_LENGTH = TIMELINE_GAP * TIMELINE_ITEMS;
-const VIEW_LENGTH = Math.min(window.innerHeight * 0.8, TIMELINE_LENGTH);
+const VIEW_LENGTH = compactMode ? window.innerHeight : Math.min(window.innerHeight * 0.8, TIMELINE_LENGTH);
 const BLOB_BATCHES = Math.round(TIMELINE_LENGTH / VIEW_LENGTH);
 
-console.log(`${BLOB_BATCHES} blob batches of length ${BLOB_BATCH_LENGTH}! Viewpoints: ${BATCH_VIEWPOINTS}`);
+// console.log(`${BLOB_BATCHES} blob batches of length ${BLOB_BATCH_LENGTH}! Viewpoints: ${BATCH_VIEWPOINTS}`);
 // console.log(
 //   `${TIMELINE_GAP} timeline gap ${TIMELINE_ITEMS}! ${BLOB_BATCHES_PRECISE} precise, ${BLOB_BATCH_LENGTH_MIN} length min`
 // );
 
 const APP_DIMENSIONS = {
-  width: Math.min(window.innerWidth * 0.9, 2048),
+  width: compactMode ? window.innerWidth : Math.min(window.innerWidth * 0.9, 2048),
   height: TIMELINE_LENGTH,
 };
 
@@ -50,6 +54,11 @@ const APP_CENTER = {
   y: APP_DIMENSIONS.height * 0.5,
 };
 
+const APP_COMPACT_CENTER = {
+  x: 0,
+  y: APP_DIMENSIONS.height * 0.5,
+};
+
 const STAGE_OPTIONS = {
   backgroundColor: 0x202020,
   width: STAGE_DIMENSIONS.width,
@@ -60,19 +69,15 @@ const STAGE_OPTIONS = {
   // resolution: 2,
 };
 
-const BLOBSTREAM_WIDTH = Math.min(Math.max(APP_DIMENSIONS.width * 0.2, 350), 500);
-
-// const BLOB_BATCH_LENGTH = (STAGE_DIMENSIONS.height * 0.75) / GlobalScale;
+const BLOBSTREAM_WIDTH = compactMode
+  ? APP_DIMENSIONS.width * 1.25
+  : Math.min(Math.max(APP_DIMENSIONS.width * 0.2, 350), 500);
 
 const BLOB_BATCH_LENGTH = VIEW_LENGTH * 0.8;
-// console.log(`${BLOB_BATCH_LENGTH} from ${APP_DIMENSIONS.height}! over: ${BLOB_BATCHES}`);
 
 const BATCH_VIEWPOINTS = new Array(BLOB_BATCHES)
   .fill(0, 0, BLOB_BATCHES)
   .map((_, i) => i * -BLOB_BATCH_LENGTH * GlobalScale);
-
-// console.log(`${BLOB_BATCHES} blob batches of length ${BLOB_BATCH_LENGTH}! Viewpoints: ${BATCH_VIEWPOINTS}`);
-// console.log(`Calculated using ${APP_DIMENSIONS.height} divided by blob batches!`);
 
 // May need this because firefox doesn't antialias unless there's a rectangle behind
 const BG_PROPS = {
@@ -90,14 +95,12 @@ const blobPointInfo = CACHED
       APP_DIMENSIONS.width,
       APP_DIMENSIONS.height,
       BLOBSTREAM_WIDTH,
-      APP_CENTER,
+      compactMode ? APP_COMPACT_CENTER : APP_CENTER,
       45,
       TIMELINE_ITEMS,
-      BLOB_BATCH_LENGTH
+      BLOB_BATCH_LENGTH,
+      compactMode
     );
-
-// console.log('BlobsCached', blobPointInfo, blobPointInfo.circles);
-// console.log('Blobs Plotted', plotter(50, BLOBSTREAM_WIDTH, BLOBSTREAM_HEIGHT, APP_CENTER, 45));
 
 if (!CACHED) {
   window.localStorage.setItem(BLOBS_LOCAL_STORAGE_KEY, JSON.stringify(blobPointInfo));

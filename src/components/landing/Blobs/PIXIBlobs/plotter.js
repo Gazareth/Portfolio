@@ -50,7 +50,7 @@ class CWCircle {
 
     const initializeDelay = batchNum === 0 ? 1000 : 500;
     this.enterDelay = initializeDelay + 125 + yBeyondBatch + 0.25 * yBeyondBatch * randnBm();
-    this.enterDuration = 250 + (yBeyondBatch ** 2 / batchLength) * (1 + 1 * randnBm()); // - Math.min(yBeyondBatch / 2, 500);
+    this.enterDuration = (250 + (750 * yBeyondBatch) / batchLength) * (1 + randnBm()); // - Math.min(yBeyondBatch / 2, 500);
 
     this.batchNum = batchNum;
   }
@@ -109,7 +109,7 @@ const rotatePoint = (point, angle, center = { x: 0, y: 0 }) => {
 // - Builds a 'main stream' curve
 // - Filters out points too far away from the 'main stream'
 //    - Each point gets an 'outlierFactor' to indicate how far it is from the 'main stream'
-const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, streamJuristiction) => {
+const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, streamJuristiction, compactMode) => {
   // GENERATE and center lattice of points
   const gridList = dedimensionalise(makeGrid(n, gridLength));
   let blobs = gridList.map(point => ({ x: point.x + center.x, y: point.y + center.y }));
@@ -118,12 +118,12 @@ const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, stream
   blobs = blobs.map(point => rotatePoint(point, angle, center));
 
   // Plot 'main stream' curve
-  const xMax = streamWidth; // distance (x-axis) outside of which a circle is invariably discarded
+  const xMax = compactMode ? streamWidth * 0.5 : streamWidth; // distance (x-axis) outside of which a circle is invariably discarded
   const streamCurve = new Array(streamRes).fill(1).map((_, i) => {
     const y = center.y - gridLength * 0.48 + (i * gridLength * 0.9) / (streamRes - 1);
     const curveAngle = (y * 8) / (gridLength * 0.8); // this is the 'angle' used by the sin/cos functions, not visual angle
     const offsetFactor = -(Math.cos(curveAngle) ** 2) + Math.sin(curveAngle); // Curve !!!
-    const xOffset = -xMax * 0.3 * offsetFactor;
+    const xOffset = -(compactMode ? streamWidth * 0.25 : xMax) * 0.3 * offsetFactor;
     return {
       x: center.x + xOffset,
       y,
@@ -162,7 +162,7 @@ const makeCWGrid = (n, gridLength, center, angle, streamWidth, streamRes, stream
   return blobs;
 };
 
-export default (spacing, width, height, streamWidth, center, angle, timelineItems, batchLength) => {
+export default (spacing, width, height, streamWidth, center, angle, timelineItems, batchLength, compactMode) => {
   // The grid must be a square because when it rotates it needs to have enough points
   const gridLength = width >= height ? width : height;
   const n = Math.round(gridLength / spacing);
@@ -171,13 +171,14 @@ export default (spacing, width, height, streamWidth, center, angle, timelineItem
   const streamJuristiction = height / streamRes; // distance (y-axis) within which a grid point is classed as 'belonging to' a stream point
 
   // const streamWidth = width * 0.35;
-  let points = makeCWGrid(n, gridLength, center, angle, streamWidth, streamRes, streamJuristiction);
+  let points = makeCWGrid(n, gridLength, center, angle, streamWidth, streamRes, streamJuristiction, compactMode);
 
-  // Set up stuff for producing timeline points periodically
+  // Breakpoints are used for producing timeline points periodically
   let currentBreakPoint = 0;
+  const breakPointDiff = (height * 0.9) / timelineItems;
   const breakPoints = new Array(timelineItems + 1)
     .fill(1)
-    .map((_, i) => ({ x: center.x, y: center.y - height * 0.5 + (i * height * 0.8) / timelineItems }))
+    .map((_, i) => ({ x: center.x, y: center.y - height * 0.5 + i * breakPointDiff - breakPointDiff * 0.8 })) // Start at center, move back up to top, add on current index's breakpoint amount, reduce half a break point to shift all timeline points
     .slice(1);
   const timelinePoints = [];
   let isLeft = true; // start on the left side, alternate
@@ -197,15 +198,15 @@ export default (spacing, width, height, streamWidth, center, angle, timelineItem
 
       if (point.y > nextBreakPos) {
         let goToNext = true;
-        if (!isLeft) {
-          goToNext = point.x > juristicialPoint.x + streamWidth * 0.05;
+        if (compactMode || !isLeft) {
+          goToNext = compactMode || point.x > juristicialPoint.x + streamWidth * 0.05;
         } else {
           goToNext = point.x < juristicialPoint.x - streamWidth * 0.05;
         }
         if (goToNext) {
           currentBreakPoint += 1;
           isTimelinePoint = true;
-          timelinePoints.push({ ...point, isLeft, batchNum, yBeyondBatch });
+          timelinePoints.push({ ...point, isLeft: !compactMode && isLeft, batchNum, yBeyondBatch });
           isLeft = !isLeft;
         }
       }
